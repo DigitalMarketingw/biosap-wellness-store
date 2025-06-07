@@ -9,6 +9,7 @@ import ProductCard from '@/components/ProductCard';
 import CategoryCard from '@/components/CategoryCard';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Link } from 'react-router-dom';
 
 const Home = () => {
   const { data: featuredProducts } = useQuery({
@@ -53,8 +54,8 @@ const Home = () => {
             
             <div className="hidden md:flex items-center space-x-6">
               <nav className="flex space-x-6">
-                <a href="#" className="text-green-700 hover:text-green-900 font-medium">Home</a>
-                <a href="#" className="text-green-700 hover:text-green-900 font-medium">Products</a>
+                <Link to="/" className="text-green-700 hover:text-green-900 font-medium">Home</Link>
+                <Link to="/products" className="text-green-700 hover:text-green-900 font-medium">Products</Link>
                 <a href="#" className="text-green-700 hover:text-green-900 font-medium">Categories</a>
                 <a href="#" className="text-green-700 hover:text-green-900 font-medium">Wellness</a>
                 <a href="#" className="text-green-700 hover:text-green-900 font-medium">About</a>
