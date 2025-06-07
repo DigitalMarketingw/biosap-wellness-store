@@ -7,10 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Link } from 'react-router-dom';
 import { useCart } from '@/contexts/CartContext';
 import { useWishlist } from '@/contexts/WishlistContext';
+import { useAuth } from '@/contexts/AuthContext';
+import UserMenu from '@/components/auth/UserMenu';
 
 const Navbar = () => {
   const { getTotalItems } = useCart();
   const { items: wishlistItems } = useWishlist();
+  const { user, loading } = useAuth();
 
   return (
     <header className="bg-white shadow-sm border-b border-green-100">
@@ -69,9 +72,26 @@ const Navbar = () => {
               </Button>
             </Link>
             
-            <Button className="bg-green-600 hover:bg-green-700 text-white">
-              Sign In
-            </Button>
+            {!loading && (
+              <>
+                {user ? (
+                  <UserMenu />
+                ) : (
+                  <div className="flex space-x-2">
+                    <Link to="/auth/signin">
+                      <Button variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
+                        Sign In
+                      </Button>
+                    </Link>
+                    <Link to="/auth/signup">
+                      <Button className="bg-green-600 hover:bg-green-700 text-white">
+                        Register
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>
