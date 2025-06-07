@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,7 +39,7 @@ const AdminUserManagement = () => {
         .from('admin_users')
         .select(`
           *,
-          profiles!inner(email, first_name, last_name)
+          profiles!fk_admin_users_profiles(email, first_name, last_name)
         `)
         .eq('is_active', true);
 
