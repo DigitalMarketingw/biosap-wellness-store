@@ -11,15 +11,11 @@ import { useToast } from '@/hooks/use-toast';
 
 interface Order {
   id: string;
+  user_id: string;
   total_amount: number;
   status: string;
   payment_method: string;
   created_at: string;
-  profiles?: {
-    first_name: string;
-    last_name: string;
-    email: string;
-  };
   order_items?: Array<{
     quantity: number;
     price: number;
@@ -46,7 +42,6 @@ const OrderManagement = () => {
         .from('orders')
         .select(`
           *,
-          profiles(first_name, last_name, email),
           order_items(
             quantity,
             price,
@@ -112,8 +107,7 @@ const OrderManagement = () => {
 
   const filteredOrders = orders.filter(order =>
     order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    `${order.profiles?.first_name} ${order.profiles?.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.profiles?.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    order.user_id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (loading) {
@@ -133,7 +127,7 @@ const OrderManagement = () => {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
-            placeholder="Search orders by ID, customer name or email..."
+            placeholder="Search orders by ID or user ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -153,10 +147,7 @@ const OrderManagement = () => {
                   <div>
                     <h3 className="text-lg font-semibold">Order #{order.id.slice(0, 8)}</h3>
                     <div className="flex items-center space-x-4 text-sm text-gray-600">
-                      <span>
-                        {order.profiles?.first_name} {order.profiles?.last_name}
-                      </span>
-                      <span>{order.profiles?.email}</span>
+                      <span>User: {order.user_id.slice(0, 8)}</span>
                       <span>${Number(order.total_amount).toFixed(2)}</span>
                       <span>{new Date(order.created_at).toLocaleDateString()}</span>
                     </div>

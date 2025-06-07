@@ -46,7 +46,17 @@ export const AdminProvider = ({ children }: { children: React.ReactNode }) => {
       if (error || !adminData) {
         setAdminUser(null);
       } else {
-        setAdminUser(adminData);
+        // Transform the data to match our interface
+        const transformedAdminUser: AdminUser = {
+          id: adminData.id,
+          user_id: adminData.user_id,
+          admin_role: adminData.admin_role,
+          permissions: typeof adminData.permissions === 'object' && adminData.permissions 
+            ? adminData.permissions as Record<string, boolean>
+            : {},
+          is_active: adminData.is_active || false,
+        };
+        setAdminUser(transformedAdminUser);
       }
     } catch (error) {
       console.error('Error checking admin access:', error);
