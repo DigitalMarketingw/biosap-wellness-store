@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         last_name: data.last_name,
         role: data.role,
         created_at: data.created_at,
-        updated_at: data.updated_at || data.created_at, // Fallback to created_at if updated_at is missing
+        updated_at: data.updated_at || undefined, // Handle missing updated_at
         company_id: data.company_id,
         parent_user_id: data.parent_user_id,
         last_sign_in_at: data.last_sign_in_at
