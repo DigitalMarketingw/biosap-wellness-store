@@ -23,6 +23,14 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import ProductManagement from "./pages/admin/ProductManagement";
 import OrderManagement from "./pages/admin/OrderManagement";
 import AdminUsers from "./pages/admin/AdminUsers";
+import CategoryManagement from "./pages/admin/CategoryManagement";
+import CustomerManagement from "./pages/admin/CustomerManagement";
+import InventoryManagement from "./pages/admin/InventoryManagement";
+import SupplierManagement from "./pages/admin/SupplierManagement";
+import PromotionManagement from "./pages/admin/PromotionManagement";
+import Analytics from "./pages/admin/Analytics";
+import ActivityLogs from "./pages/admin/ActivityLogs";
+import Settings from "./pages/admin/Settings";
 import AdminNotFound from "./pages/admin/AdminNotFound";
 
 const queryClient = new QueryClient();
@@ -61,7 +69,15 @@ const App = () => (
                   }>
                     <Route index element={<AdminDashboard />} />
                     <Route path="products" element={<ProductManagement />} />
+                    <Route path="categories" element={<CategoryManagement />} />
                     <Route path="orders" element={<OrderManagement />} />
+                    <Route path="customers" element={<CustomerManagement />} />
+                    <Route path="inventory" element={<InventoryManagement />} />
+                    <Route path="suppliers" element={<SupplierManagement />} />
+                    <Route path="promotions" element={<PromotionManagement />} />
+                    <Route path="analytics" element={<Analytics />} />
+                    <Route path="logs" element={<ActivityLogs />} />
+                    <Route path="settings" element={<Settings />} />
                     <Route path="users" element={<AdminUsers />} />
                     <Route path="*" element={<AdminNotFound />} />
                   </Route>
