@@ -5,17 +5,22 @@ import { Badge } from '@/components/ui/badge';
 import { Leaf, Search, Heart, ShoppingCart } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Link } from 'react-router-dom';
+import { useCart } from '@/contexts/CartContext';
+import { useWishlist } from '@/contexts/WishlistContext';
 
 const Navbar = () => {
+  const { getTotalItems } = useCart();
+  const { items: wishlistItems } = useWishlist();
+
   return (
     <header className="bg-white shadow-sm border-b border-green-100">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
+          <Link to="/" className="flex items-center space-x-2">
             <Leaf className="h-8 w-8 text-green-600" />
             <h1 className="text-2xl font-bold text-green-800">BIOSAP</h1>
             <Badge variant="secondary" className="bg-green-100 text-green-700">Ayurvedic</Badge>
-          </div>
+          </Link>
           
           <div className="hidden md:flex items-center space-x-6">
             <nav className="flex space-x-6">
@@ -35,12 +40,35 @@ const Navbar = () => {
                 className="pl-10 w-64 border-green-200 focus:border-green-400"
               />
             </div>
-            <Button variant="ghost" size="icon" className="text-green-600 hover:text-green-800">
-              <Heart className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="text-green-600 hover:text-green-800">
-              <ShoppingCart className="h-5 w-5" />
-            </Button>
+            
+            <Link to="/wishlist">
+              <Button variant="ghost" size="icon" className="text-green-600 hover:text-green-800 relative">
+                <Heart className="h-5 w-5" />
+                {wishlistItems.length > 0 && (
+                  <Badge 
+                    variant="secondary" 
+                    className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-green-600 text-white text-xs"
+                  >
+                    {wishlistItems.length}
+                  </Badge>
+                )}
+              </Button>
+            </Link>
+            
+            <Link to="/cart">
+              <Button variant="ghost" size="icon" className="text-green-600 hover:text-green-800 relative">
+                <ShoppingCart className="h-5 w-5" />
+                {getTotalItems() > 0 && (
+                  <Badge 
+                    variant="secondary" 
+                    className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-green-600 text-white text-xs"
+                  >
+                    {getTotalItems()}
+                  </Badge>
+                )}
+              </Button>
+            </Link>
+            
             <Button className="bg-green-600 hover:bg-green-700 text-white">
               Sign In
             </Button>
