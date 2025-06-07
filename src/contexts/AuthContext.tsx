@@ -11,7 +11,10 @@ interface Profile {
   last_name: string | null;
   role: string;
   created_at: string;
-  updated_at: string;
+  updated_at?: string; // Make this optional since it might not always be present
+  company_id?: string | null;
+  parent_user_id?: string | null;
+  last_sign_in_at?: string | null;
 }
 
 interface AuthContextType {
@@ -46,7 +49,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.error('Error fetching profile:', error);
         return null;
       }
-      return data;
+      
+      // Ensure we have the required fields and handle optional ones
+      const profileData: Profile = {
+        id: data.id,
+        email: data.email,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        role: data.role,
+        created_at: data.created_at,
+        updated_at: data.updated_at || data.created_at, // Fallback to created_at if updated_at is missing
+        company_id: data.company_id,
+        parent_user_id: data.parent_user_id,
+        last_sign_in_at: data.last_sign_in_at
+      };
+      
+      return profileData;
     } catch (error) {
       console.error('Error in fetchProfile:', error);
       return null;
