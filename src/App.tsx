@@ -22,6 +22,7 @@ import SignUp from "./pages/auth/SignUp";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import ProductManagement from "./pages/admin/ProductManagement";
 import OrderManagement from "./pages/admin/OrderManagement";
+import AdminUsers from "./pages/admin/AdminUsers";
 import AdminNotFound from "./pages/admin/AdminNotFound";
 
 const queryClient = new QueryClient();
@@ -61,6 +62,7 @@ const App = () => (
                     <Route index element={<AdminDashboard />} />
                     <Route path="products" element={<ProductManagement />} />
                     <Route path="orders" element={<OrderManagement />} />
+                    <Route path="users" element={<AdminUsers />} />
                     <Route path="*" element={<AdminNotFound />} />
                   </Route>
                   
