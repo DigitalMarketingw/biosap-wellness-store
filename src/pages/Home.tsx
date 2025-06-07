@@ -2,14 +2,11 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Leaf, Star, ShoppingCart, Heart, Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Leaf, Star, ShoppingCart } from 'lucide-react';
 import ProductCard from '@/components/ProductCard';
 import CategoryCard from '@/components/CategoryCard';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Link } from 'react-router-dom';
 
 const Home = () => {
   const { data: featuredProducts } = useQuery({
@@ -41,49 +38,7 @@ const Home = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
-      {/* Navigation Header */}
-      <header className="bg-white shadow-sm border-b border-green-100">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Leaf className="h-8 w-8 text-green-600" />
-              <h1 className="text-2xl font-bold text-green-800">BIOSAP</h1>
-              <Badge variant="secondary" className="bg-green-100 text-green-700">Ayurvedic</Badge>
-            </div>
-            
-            <div className="hidden md:flex items-center space-x-6">
-              <nav className="flex space-x-6">
-                <Link to="/" className="text-green-700 hover:text-green-900 font-medium">Home</Link>
-                <Link to="/products" className="text-green-700 hover:text-green-900 font-medium">Products</Link>
-                <a href="#" className="text-green-700 hover:text-green-900 font-medium">Categories</a>
-                <a href="#" className="text-green-700 hover:text-green-900 font-medium">Wellness</a>
-                <a href="#" className="text-green-700 hover:text-green-900 font-medium">About</a>
-              </nav>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <div className="relative hidden lg:block">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-green-500 h-4 w-4" />
-                <Input 
-                  placeholder="Search natural products..." 
-                  className="pl-10 w-64 border-green-200 focus:border-green-400"
-                />
-              </div>
-              <Button variant="ghost" size="icon" className="text-green-600 hover:text-green-800">
-                <Heart className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="text-green-600 hover:text-green-800">
-                <ShoppingCart className="h-5 w-5" />
-              </Button>
-              <Button className="bg-green-600 hover:bg-green-700 text-white">
-                Sign In
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
+    <div className="bg-gradient-to-b from-green-50 to-white">
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-r from-green-600 via-green-500 to-emerald-500">
         <div className="absolute inset-0 bg-black/10"></div>
@@ -230,57 +185,6 @@ const Home = () => {
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="bg-green-800 text-white py-12">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <Leaf className="h-6 w-6" />
-                <span className="text-xl font-bold">BIOSAP</span>
-              </div>
-              <p className="text-green-200 mb-4">
-                Your trusted partner in Ayurvedic wellness, bringing ancient wisdom to modern life.
-              </p>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Quick Links</h4>
-              <ul className="space-y-2 text-green-200">
-                <li><a href="#" className="hover:text-white">About Us</a></li>
-                <li><a href="#" className="hover:text-white">Products</a></li>
-                <li><a href="#" className="hover:text-white">Wellness Blog</a></li>
-                <li><a href="#" className="hover:text-white">Contact</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Categories</h4>
-              <ul className="space-y-2 text-green-200">
-                <li><a href="#" className="hover:text-white">Immunity</a></li>
-                <li><a href="#" className="hover:text-white">Digestion</a></li>
-                <li><a href="#" className="hover:text-white">Skin Care</a></li>
-                <li><a href="#" className="hover:text-white">Energy</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Support</h4>
-              <ul className="space-y-2 text-green-200">
-                <li><a href="#" className="hover:text-white">FAQ</a></li>
-                <li><a href="#" className="hover:text-white">Shipping</a></li>
-                <li><a href="#" className="hover:text-white">Returns</a></li>
-                <li><a href="#" className="hover:text-white">Privacy Policy</a></li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="border-t border-green-700 mt-8 pt-8 text-center text-green-200">
-            <p>&copy; 2024 BIOSAP. All rights reserved. | Made with 💚 for your wellness</p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };

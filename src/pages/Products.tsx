@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
-import { Leaf, Search, Filter, X } from 'lucide-react';
+import { Search, Filter, X } from 'lucide-react';
 import ProductCard from '@/components/ProductCard';
 
 const Products = () => {
@@ -100,19 +100,6 @@ const Products = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-green-100">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center space-x-2 mb-4">
-            <Leaf className="h-6 w-6 text-green-600" />
-            <h1 className="text-3xl font-bold text-green-800">Our Products</h1>
-          </div>
-          <p className="text-green-600 max-w-2xl">
-            Discover our comprehensive collection of premium Ayurvedic products designed to support your holistic wellness journey.
-          </p>
-        </div>
-      </div>
-
       <div className="container mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-4 gap-8">
           {/* Filters Sidebar */}
