@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,7 +10,6 @@ interface Profile {
   last_name: string | null;
   role: string;
   created_at: string;
-  updated_at?: string; // Make this optional since it might not always be present
   company_id?: string | null;
   parent_user_id?: string | null;
   last_sign_in_at?: string | null;
@@ -50,7 +48,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return null;
       }
       
-      // Ensure we have the required fields and handle optional ones
+      // Map the database response to our Profile interface
       const profileData: Profile = {
         id: data.id,
         email: data.email,
@@ -58,7 +56,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         last_name: data.last_name,
         role: data.role,
         created_at: data.created_at,
-        updated_at: data.updated_at || undefined, // Handle missing updated_at
         company_id: data.company_id,
         parent_user_id: data.parent_user_id,
         last_sign_in_at: data.last_sign_in_at
