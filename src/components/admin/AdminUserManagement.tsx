@@ -45,7 +45,24 @@ const AdminUserManagement = () => {
         .eq('is_active', true);
 
       if (error) throw error;
-      setAdminUsers(data || []);
+      
+      // Transform the data to match our interface
+      const transformedData: AdminUser[] = (data || []).map(item => ({
+        id: item.id,
+        user_id: item.user_id,
+        admin_role: item.admin_role,
+        permissions: typeof item.permissions === 'object' && item.permissions 
+          ? item.permissions as Record<string, boolean>
+          : {},
+        is_active: item.is_active || false,
+        profiles: {
+          email: item.profiles?.email || '',
+          first_name: item.profiles?.first_name || null,
+          last_name: item.profiles?.last_name || null,
+        }
+      }));
+      
+      setAdminUsers(transformedData);
     } catch (error) {
       console.error('Error fetching admin users:', error);
       toast({
