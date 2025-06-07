@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,25 +33,40 @@ const CustomerManagement = () => {
 
   const fetchCustomers = async () => {
     try {
-      // Fetch customers with order statistics
-      const { data, error } = await supabase
+      // First, fetch all customers (non-admin profiles)
+      const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select(`
-          *,
-          orders(id, total_amount)
-        `)
+        .select('*')
         .neq('role', 'admin')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (profilesError) throw profilesError;
 
-      // Transform data to include order statistics
-      const customersWithStats = data?.map(customer => ({
-        ...customer,
-        order_count: customer.orders?.length || 0,
-        total_spent: customer.orders?.reduce((sum: number, order: any) => 
-          sum + Number(order.total_amount), 0) || 0
-      })) || [];
+      // Then, fetch order statistics for each customer
+      const customersWithStats = await Promise.all(
+        profilesData?.map(async (customer) => {
+          const { data: ordersData, error: ordersError } = await supabase
+            .from('orders')
+            .select('id, total_amount')
+            .eq('user_id', customer.id);
+
+          if (ordersError) {
+            console.error('Error fetching orders for customer:', customer.id, ordersError);
+            return {
+              ...customer,
+              order_count: 0,
+              total_spent: 0
+            };
+          }
+
+          return {
+            ...customer,
+            order_count: ordersData?.length || 0,
+            total_spent: ordersData?.reduce((sum: number, order: any) => 
+              sum + Number(order.total_amount), 0) || 0
+          };
+        }) || []
+      );
 
       setCustomers(customersWithStats);
       await logAdminActivity('view', 'customers');
