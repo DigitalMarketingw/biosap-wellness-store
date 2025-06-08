@@ -93,8 +93,8 @@ const Home = () => {
             <div className="relative">
               <div className="aspect-square bg-white/10 rounded-full blur-3xl absolute inset-0 transform scale-150"></div>
               <img 
-                src="/lovable-uploads/c8f36fab-aa8b-4035-9101-cf71580547b2.png" 
-                alt="BIOSAP CardinalSip - Hibiscus Berries Rose Instant Herbal Infusion for Heart Harmony and Skin Replenishment"
+                src="/lovable-uploads/1aa37669-de0f-422b-81df-fabede344482.png" 
+                alt="BIOSAP CoolDetox - Coriander Mint Ginger Instant Herbal Infusion for Natural Detox and Cleansing"
                 className="relative z-10 w-full h-auto rounded-2xl shadow-2xl"
               />
             </div>
@@ -203,7 +203,7 @@ const Home = () => {
               <CardContent className="p-0">
                 <div className="relative overflow-hidden rounded-t-lg">
                   <img 
-                    src="/lovable-uploads/6a70f8ba-4f96-4c5f-88d5-ff8b20a8e61a.png" 
+                    src="/lovable-uploads/1aa37669-de0f-422b-81df-fabede344482.png" 
                     alt="CoolDetox - Coriander Mint Ginger Natural Detox Infusion"
                     className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                   />
