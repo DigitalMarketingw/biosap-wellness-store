@@ -151,7 +151,7 @@ const Products = () => {
             </div>
             <div className="text-center">
               <img 
-                src="/lovable-uploads/ab5ccc34-8661-4343-abac-8863eb7e8c1c.png" 
+                src="/lovable-uploads/280833e3-0bcb-4a9d-81b7-bd98ee95388a.png" 
                 alt="CitruSpire - Digestive Health Products"
                 className="w-full h-32 object-cover rounded-lg mb-2 opacity-90 hover:opacity-100 transition-opacity"
               />
