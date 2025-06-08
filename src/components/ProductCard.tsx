@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,17 +29,26 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const { toast } = useToast();
   
-  // Helper function to get a valid image URL
+  // Helper function to get a valid image URL with better debugging
   const getValidImageUrl = () => {
+    console.log('ProductCard - Checking image URLs for product:', product.name, product.image_urls);
+    
     if (product.image_urls && product.image_urls.length > 0) {
       const firstImage = product.image_urls[0];
+      console.log('ProductCard - First image URL:', firstImage);
+      
       // Check if the image URL exists and is not a placeholder
       if (firstImage && 
           firstImage !== '/placeholder.svg' && 
           !firstImage.includes('placeholder.svg') &&
           firstImage.trim() !== '') {
+        console.log('ProductCard - Using valid image URL:', firstImage);
         return firstImage;
+      } else {
+        console.log('ProductCard - Image URL is invalid or placeholder, using fallback');
       }
+    } else {
+      console.log('ProductCard - No image URLs available');
     }
     return '/placeholder.svg';
   };
@@ -79,6 +89,20 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     }
   };
 
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const target = e.target as HTMLImageElement;
+    console.error('ProductCard - Image failed to load:', target.src);
+    if (target.src !== '/placeholder.svg') {
+      console.log('ProductCard - Falling back to placeholder');
+      target.src = '/placeholder.svg';
+    }
+  };
+
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const target = e.target as HTMLImageElement;
+    console.log('ProductCard - Image loaded successfully:', target.src);
+  };
+
   return (
     <Link to={`/product/${product.id}`}>
       <Card className="group hover:shadow-lg transition-all duration-300 border-green-100 hover:border-green-300 h-full">
@@ -88,12 +112,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               src={imageUrl}
               alt={product.name}
               className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                if (target.src !== '/placeholder.svg') {
-                  target.src = '/placeholder.svg';
-                }
-              }}
+              onError={handleImageError}
+              onLoad={handleImageLoad}
+              loading="lazy"
             />
             
             {product.is_featured && (

@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Upload, X, Image as ImageIcon, Loader2, AlertCircle } from 'lucide-react';
+import ImageDebugger from '@/components/ImageDebugger';
 
 interface ImageUploadProps {
   images: string[];
@@ -20,6 +21,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   const [uploading, setUploading] = useState<boolean[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
+  const [showDebugger, setShowDebugger] = useState(false);
   const { toast } = useToast();
 
   const compressImage = useCallback((file: File, maxWidth = 800, quality = 0.8): Promise<File> => {
@@ -58,32 +60,43 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
   const uploadImage = useCallback(async (file: File, index: number): Promise<string | null> => {
     try {
+      console.log('ImageUpload - Starting upload for file:', file.name);
+      
       // Compress the image
       const compressedFile = await compressImage(file);
+      console.log('ImageUpload - Image compressed:', compressedFile.size, 'bytes');
       
       // Generate unique filename
       const fileExt = 'jpg'; // Always use jpg after compression
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `products/${fileName}`;
 
+      console.log('ImageUpload - Uploading to path:', filePath);
+
       // Upload to Supabase Storage
       const { data, error } = await supabase.storage
         .from('product-images')
         .upload(filePath, compressedFile);
 
-      if (error) throw error;
+      if (error) {
+        console.error('ImageUpload - Upload error:', error);
+        throw error;
+      }
+
+      console.log('ImageUpload - Upload successful:', data);
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('product-images')
         .getPublicUrl(filePath);
 
+      console.log('ImageUpload - Generated public URL:', publicUrl);
       return publicUrl;
     } catch (error) {
       console.error('Error uploading image:', error);
       toast({
         title: "Upload failed",
-        description: `Failed to upload ${file.name}`,
+        description: `Failed to upload ${file.name}. Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive",
       });
       return null;
@@ -144,6 +157,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       const successfulUploads = uploadResults.filter(url => url !== null) as string[];
       
       if (successfulUploads.length > 0) {
+        console.log('ImageUpload - All uploads successful:', successfulUploads);
         onImagesChange([...images, ...successfulUploads]);
         toast({
           title: "Upload successful",
@@ -194,16 +208,18 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   }, [images, onImagesChange]);
 
   const handleImageError = useCallback((index: number) => {
+    console.error('ImageUpload - Image failed to load at index:', index, 'URL:', images[index]);
     setImageErrors(prev => new Set(prev.add(index)));
-  }, []);
+  }, [images]);
 
   const handleImageLoad = useCallback((index: number) => {
+    console.log('ImageUpload - Image loaded successfully at index:', index, 'URL:', images[index]);
     setImageErrors(prev => {
       const newErrors = new Set(prev);
       newErrors.delete(index);
       return newErrors;
     });
-  }, []);
+  }, [images]);
 
   // Check if an image URL is valid (not just placeholder)
   const isValidImageUrl = useCallback((url: string) => {
@@ -257,11 +273,24 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         </CardContent>
       </Card>
 
-      {/* Current Images Counter */}
+      {/* Current Images Counter and Debug Toggle */}
       <div className="flex justify-between items-center">
-        <Badge variant="outline">
-          {images.length} / {maxImages} images
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline">
+            {images.length} / {maxImages} images
+          </Badge>
+          {images.length > 0 && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowDebugger(!showDebugger)}
+              className="text-orange-600 hover:text-orange-800"
+            >
+              {showDebugger ? 'Hide' : 'Show'} Debug Info
+            </Button>
+          )}
+        </div>
         {uploading.length > 0 && (
           <div className="flex items-center text-sm text-gray-500">
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -269,6 +298,11 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
           </div>
         )}
       </div>
+
+      {/* Image Debug Info */}
+      {showDebugger && images.length > 0 && (
+        <ImageDebugger imageUrls={images} title="Product Images Debug" />
+      )}
 
       {/* Image Preview Grid */}
       {images.length > 0 && (

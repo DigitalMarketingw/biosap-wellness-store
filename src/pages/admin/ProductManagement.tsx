@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +9,7 @@ import { Plus, Search, Edit, Trash2, Package, AlertTriangle } from 'lucide-react
 import { useToast } from '@/hooks/use-toast';
 import AddProductDialog from '@/components/admin/AddProductDialog';
 import EditProductDialog from '@/components/admin/EditProductDialog';
+import ImageDebugger from '@/components/ImageDebugger';
 
 interface Product {
   id: string;
@@ -40,6 +40,7 @@ const ProductManagement = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [showImageDebugger, setShowImageDebugger] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -136,6 +137,9 @@ const ProductManagement = () => {
     product.sku?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Get all image URLs for debugging
+  const allImageUrls = products.flatMap(product => product.image_urls || []);
+
   if (loading) {
     return <div className="p-6">Loading products...</div>;
   }
@@ -147,13 +151,22 @@ const ProductManagement = () => {
           <h1 className="text-3xl font-bold text-gray-900">Product Management</h1>
           <p className="text-gray-600">Manage your Ayurvedic products inventory</p>
         </div>
-        <Button 
-          className="bg-green-600 hover:bg-green-700"
-          onClick={() => setShowAddDialog(true)}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Add Product
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={() => setShowImageDebugger(!showImageDebugger)}
+            className="text-orange-600 border-orange-300 hover:bg-orange-50"
+          >
+            {showImageDebugger ? 'Hide' : 'Show'} Image Debug
+          </Button>
+          <Button 
+            className="bg-green-600 hover:bg-green-700"
+            onClick={() => setShowAddDialog(true)}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Product
+          </Button>
+        </div>
       </div>
 
       <div className="flex gap-4">
@@ -167,6 +180,14 @@ const ProductManagement = () => {
           />
         </div>
       </div>
+
+      {/* Image Debug Section */}
+      {showImageDebugger && allImageUrls.length > 0 && (
+        <ImageDebugger 
+          imageUrls={allImageUrls} 
+          title={`All Product Images (${allImageUrls.length} total)`}
+        />
+      )}
 
       <div className="grid grid-cols-1 gap-4">
         {filteredProducts.map((product) => (
@@ -197,7 +218,12 @@ const ProductManagement = () => {
                               className="w-full h-full object-cover"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
+                                console.error('ProductManagement - Image failed to load:', target.src);
                                 target.src = '/placeholder.svg';
+                              }}
+                              onLoad={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                console.log('ProductManagement - Image loaded:', target.src);
                               }}
                             />
                           </div>
