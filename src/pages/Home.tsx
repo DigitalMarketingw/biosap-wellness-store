@@ -93,8 +93,8 @@ const Home = () => {
             <div className="relative">
               <div className="aspect-square bg-white/10 rounded-full blur-3xl absolute inset-0 transform scale-150"></div>
               <img 
-                src="/lovable-uploads/280833e3-0bcb-4a9d-81b7-bd98ee95388a.png" 
-                alt="BIOSAP DigestEase - Fennel Lemon Instant Herbal Infusion for digestive wellness"
+                src="/lovable-uploads/c8f36fab-aa8b-4035-9101-cf71580547b2.png" 
+                alt="BIOSAP CardinalSip - Hibiscus Berries Rose Instant Herbal Infusion for Heart Harmony and Skin Replenishment"
                 className="relative z-10 w-full h-auto rounded-2xl shadow-2xl"
               />
             </div>
