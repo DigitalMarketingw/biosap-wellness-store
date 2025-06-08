@@ -185,15 +185,15 @@ const Home = () => {
               <CardContent className="p-0">
                 <div className="relative overflow-hidden rounded-t-lg">
                   <img 
-                    src="/lovable-uploads/ab5ccc34-8661-4343-abac-8863eb7e8c1c.png" 
-                    alt="CitruSpire - Cumin Lemon Instant Herbal Infusion for Digestive Health"
+                    src="/lovable-uploads/1b0830d9-a2f7-49d9-9dbf-f738f13913fc.png" 
+                    alt="SmokyGinger - Green Tea & Ginger Instant Herbal Infusion for Digestive Health"
                     className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
                 <div className="p-6 text-center">
                   <h3 className="text-xl font-semibold text-yellow-600 mb-2">Digestive Health</h3>
                   <p className="text-gray-600 text-sm">
-                    CitruSpire's Cumin-Lemon blend provides instant digestive support and refreshing wellness.
+                    SmokyGinger's Green Tea and Ginger blend supports healthy digestion and provides soothing thermal comfort.
                   </p>
                 </div>
               </CardContent>
