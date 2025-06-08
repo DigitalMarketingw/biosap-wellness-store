@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +9,7 @@ import { useAdmin } from '@/contexts/AdminContext';
 import { Plus, Search, Edit, Trash2, Package, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import AddProductDialog from '@/components/admin/AddProductDialog';
+import EditProductDialog from '@/components/admin/EditProductDialog';
 
 interface Product {
   id: string;
@@ -20,6 +22,13 @@ interface Product {
   category_id: string;
   categories?: { name: string };
   reorder_point: number;
+  description: string;
+  supplier_id: string | null;
+  reorder_quantity: number;
+  image_urls: string[];
+  ingredients: string;
+  usage_instructions: string;
+  benefits: string[];
 }
 
 const ProductManagement = () => {
@@ -29,6 +38,8 @@ const ProductManagement = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     fetchProducts();
@@ -57,6 +68,11 @@ const ProductManagement = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setSelectedProduct(product);
+    setShowEditDialog(true);
   };
 
   const toggleProductStatus = async (productId: string, currentStatus: boolean) => {
@@ -171,6 +187,28 @@ const ProductManagement = () => {
                         <Badge variant="outline">{product.categories.name}</Badge>
                       )}
                     </div>
+                    {product.image_urls && product.image_urls.length > 0 && (
+                      <div className="flex gap-2 mt-2">
+                        {product.image_urls.slice(0, 3).map((imageUrl, index) => (
+                          <div key={index} className="w-12 h-12 rounded border overflow-hidden">
+                            <img
+                              src={imageUrl}
+                              alt={`${product.name} ${index + 1}`}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = '/placeholder.svg';
+                              }}
+                            />
+                          </div>
+                        ))}
+                        {product.image_urls.length > 3 && (
+                          <div className="w-12 h-12 rounded border bg-gray-100 flex items-center justify-center text-xs text-gray-500">
+                            +{product.image_urls.length - 3}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -196,7 +234,11 @@ const ProductManagement = () => {
                   )}
 
                   <div className="flex space-x-2">
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleEditProduct(product)}
+                    >
                       <Edit className="h-4 w-4" />
                     </Button>
                     
@@ -247,6 +289,13 @@ const ProductManagement = () => {
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
         onProductAdded={fetchProducts}
+      />
+
+      <EditProductDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        product={selectedProduct}
+        onProductUpdated={fetchProducts}
       />
     </div>
   );

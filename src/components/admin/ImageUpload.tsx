@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Upload, X, Image as ImageIcon, Loader2, AlertCircle } from 'lucide-react';
 
 interface ImageUploadProps {
   images: string[];
@@ -20,6 +20,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 }) => {
   const [uploading, setUploading] = useState<boolean[]>([]);
   const [dragActive, setDragActive] = useState(false);
+  const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
   const { toast } = useToast();
 
   const compressImage = useCallback((file: File, maxWidth = 800, quality = 0.8): Promise<File> => {
@@ -184,14 +185,26 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   const removeImage = useCallback((index: number) => {
     const newImages = images.filter((_, i) => i !== index);
     onImagesChange(newImages);
+    
+    // Remove error state for this image
+    setImageErrors(prev => {
+      const newErrors = new Set(prev);
+      newErrors.delete(index);
+      return newErrors;
+    });
   }, [images, onImagesChange]);
 
-  const moveImage = useCallback((fromIndex: number, toIndex: number) => {
-    const newImages = [...images];
-    const [movedImage] = newImages.splice(fromIndex, 1);
-    newImages.splice(toIndex, 0, movedImage);
-    onImagesChange(newImages);
-  }, [images, onImagesChange]);
+  const handleImageError = useCallback((index: number) => {
+    setImageErrors(prev => new Set(prev.add(index)));
+  }, []);
+
+  const handleImageLoad = useCallback((index: number) => {
+    setImageErrors(prev => {
+      const newErrors = new Set(prev);
+      newErrors.delete(index);
+      return newErrors;
+    });
+  }, []);
 
   return (
     <div className="space-y-4">
@@ -255,13 +268,22 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {images.map((imageUrl, index) => (
             <div key={index} className="relative group">
-              <div className="aspect-square rounded-lg overflow-hidden border-2 border-gray-200">
-                <img
-                  src={imageUrl}
-                  alt={`Product image ${index + 1}`}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
+              <div className="aspect-square rounded-lg overflow-hidden border-2 border-gray-200 bg-gray-100">
+                {imageErrors.has(index) ? (
+                  <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                    <AlertCircle className="h-8 w-8 mb-2" />
+                    <span className="text-xs text-center">Failed to load image</span>
+                  </div>
+                ) : (
+                  <img
+                    src={imageUrl}
+                    alt={`Product image ${index + 1}`}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                    onError={() => handleImageError(index)}
+                    onLoad={() => handleImageLoad(index)}
+                  />
+                )}
               </div>
               
               {/* Remove button */}
