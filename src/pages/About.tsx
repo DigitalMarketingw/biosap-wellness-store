@@ -95,8 +95,8 @@ const About = () => {
               </div>
               <div className="relative">
                 <img 
-                  src="/placeholder.svg?height=400&width=500" 
-                  alt="Ayurvedic herbs and preparation"
+                  src="/lovable-uploads/7c3f88dd-b74a-42c4-8e42-6c0a65f75f9a.png" 
+                  alt="CitruSpire - Premium Ayurvedic herbal infusion showcasing traditional formulation"
                   className="rounded-lg shadow-lg w-full"
                 />
               </div>
@@ -140,8 +140,8 @@ const About = () => {
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               <div className="order-2 lg:order-1">
                 <img 
-                  src="/placeholder.svg?height=400&width=500" 
-                  alt="Laboratory testing and quality control"
+                  src="/lovable-uploads/ac01bd08-854c-47c1-a2c1-2cf2884eab66.png" 
+                  alt="Real customer enjoying BIOSAP products - quality and lifestyle integration"
                   className="rounded-lg shadow-lg w-full"
                 />
               </div>
@@ -183,8 +183,60 @@ const About = () => {
         </div>
       </section>
 
-      {/* Our Team Section */}
+      {/* Product Range Showcase */}
       <section className="py-16 bg-green-50">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold text-green-800 mb-4">Our Product Range</h2>
+              <p className="text-gray-600 max-w-2xl mx-auto">
+                From digestive wellness to hormonal balance, our diverse range covers all aspects of holistic health
+              </p>
+            </div>
+            
+            <div className="grid md:grid-cols-2 gap-8">
+              <Card className="border-green-200 overflow-hidden">
+                <CardContent className="p-0">
+                  <div className="grid md:grid-cols-2">
+                    <img 
+                      src="/lovable-uploads/b1e9c91e-9966-4a0b-94e3-f2b9f4b8bf4e.png" 
+                      alt="SheVital - Women's wellness and hormonal balance support"
+                      className="w-full h-48 md:h-full object-cover"
+                    />
+                    <div className="p-6 flex flex-col justify-center">
+                      <h3 className="text-lg font-semibold text-green-800 mb-2">Women's Wellness</h3>
+                      <p className="text-gray-600 text-sm">
+                        Specialized formulations designed to support women's unique health needs throughout all life stages.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="border-green-200 overflow-hidden">
+                <CardContent className="p-0">
+                  <div className="grid md:grid-cols-2">
+                    <img 
+                      src="/lovable-uploads/cfbe9a1e-2c1e-4cdf-8eb3-6d4b93d62e44.png" 
+                      alt="CoolDetox - Natural detoxification and cleansing support"
+                      className="w-full h-48 md:h-full object-cover"
+                    />
+                    <div className="p-6 flex flex-col justify-center">
+                      <h3 className="text-lg font-semibold text-green-800 mb-2">Detox & Cleanse</h3>
+                      <p className="text-gray-600 text-sm">
+                        Natural detoxification blends that help cleanse and rejuvenate your body from within.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Our Team Section */}
+      <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12">
@@ -213,7 +265,7 @@ const About = () => {
       </section>
 
       {/* Call to Action Section */}
-      <section className="py-16">
+      <section className="py-16 bg-green-50">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <div className="bg-gradient-to-r from-green-600 to-green-800 rounded-2xl p-12 text-white">

@@ -130,6 +130,53 @@ const Products = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
+      {/* Hero Banner with Product Showcase */}
+      <section className="relative bg-gradient-to-r from-green-600 to-green-800 text-white py-16">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl lg:text-5xl font-bold mb-4">Our Products</h1>
+            <p className="text-xl text-green-100 max-w-2xl mx-auto">
+              Discover our complete range of premium Ayurvedic wellness solutions
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
+            <div className="text-center">
+              <img 
+                src="/lovable-uploads/b1e9c91e-9966-4a0b-94e3-f2b9f4b8bf4e.png" 
+                alt="SheVital - Women's Wellness Products"
+                className="w-full h-32 object-cover rounded-lg mb-2 opacity-90 hover:opacity-100 transition-opacity"
+              />
+              <p className="text-sm text-green-100">Women's Wellness</p>
+            </div>
+            <div className="text-center">
+              <img 
+                src="/lovable-uploads/7c3f88dd-b74a-42c4-8e42-6c0a65f75f9a.png" 
+                alt="CitruSpire - Digestive Health Products"
+                className="w-full h-32 object-cover rounded-lg mb-2 opacity-90 hover:opacity-100 transition-opacity"
+              />
+              <p className="text-sm text-green-100">Digestive Health</p>
+            </div>
+            <div className="text-center">
+              <img 
+                src="/lovable-uploads/cfbe9a1e-2c1e-4cdf-8eb3-6d4b93d62e44.png" 
+                alt="CoolDetox - Natural Detox Products"
+                className="w-full h-32 object-cover rounded-lg mb-2 opacity-90 hover:opacity-100 transition-opacity"
+              />
+              <p className="text-sm text-green-100">Natural Detox</p>
+            </div>
+            <div className="text-center">
+              <img 
+                src="/lovable-uploads/6a70f8ba-4f96-4c5f-88d5-ff8b20a8e61a.png" 
+                alt="Premium Herbal Infusions - Daily Vitality"
+                className="w-full h-32 object-cover rounded-lg mb-2 opacity-90 hover:opacity-100 transition-opacity"
+              />
+              <p className="text-sm text-green-100">Daily Vitality</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <div className="container mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-4 gap-8">
           {/* Filters Sidebar */}

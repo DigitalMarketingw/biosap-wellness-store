@@ -42,7 +42,7 @@ const Home = () => {
     <div className="bg-gradient-to-b from-green-50 to-white">
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-r from-green-600 via-green-500 to-emerald-500">
-        <div className="absolute inset-0 bg-black/10"></div>
+        <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative container mx-auto px-4 py-20 lg:py-32">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="text-white space-y-6">
@@ -68,7 +68,7 @@ const Home = () => {
                   </Button>
                 </Link>
                 <Link to="/about">
-                  <Button size="lg" className="border-white text-white hover:bg-white hover:text-green-600 px-8">
+                  <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-green-600 px-8">
                     Learn More
                   </Button>
                 </Link>
@@ -93,8 +93,8 @@ const Home = () => {
             <div className="relative">
               <div className="aspect-square bg-white/10 rounded-full blur-3xl absolute inset-0 transform scale-150"></div>
               <img 
-                src="/placeholder.svg" 
-                alt="Ayurvedic herbs and products"
+                src="/lovable-uploads/ac01bd08-854c-47c1-a2c1-2cf2884eab66.png" 
+                alt="Woman enjoying BIOSAP Ayurvedic wellness products - natural health and vitality"
                 className="relative z-10 w-full h-auto rounded-2xl shadow-2xl"
               />
             </div>
@@ -150,8 +150,96 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Benefits Section */}
+      {/* Product Showcase Section */}
       <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl lg:text-4xl font-bold text-green-800 mb-4">
+              Our Premium Product Range
+            </h2>
+            <p className="text-lg text-green-600 max-w-2xl mx-auto">
+              Discover the power of nature with our scientifically formulated Ayurvedic solutions
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <Card className="border-pink-200 hover:shadow-lg transition-all duration-300 group">
+              <CardContent className="p-0">
+                <div className="relative overflow-hidden rounded-t-lg">
+                  <img 
+                    src="/lovable-uploads/b1e9c91e-9966-4a0b-94e3-f2b9f4b8bf4e.png" 
+                    alt="SheVital - Hormonal Balance Support with Green Tea and Shatavari"
+                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+                <div className="p-6 text-center">
+                  <h3 className="text-xl font-semibold text-pink-600 mb-2">Women's Wellness</h3>
+                  <p className="text-gray-600 text-sm">
+                    SheVital combines Green Tea and Shatavari for optimal hormonal balance and women's health support.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-yellow-200 hover:shadow-lg transition-all duration-300 group">
+              <CardContent className="p-0">
+                <div className="relative overflow-hidden rounded-t-lg">
+                  <img 
+                    src="/lovable-uploads/7c3f88dd-b74a-42c4-8e42-6c0a65f75f9a.png" 
+                    alt="CitruSpire - Cumin Lemon Instant Herbal Infusion for Digestive Health"
+                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+                <div className="p-6 text-center">
+                  <h3 className="text-xl font-semibold text-yellow-600 mb-2">Digestive Health</h3>
+                  <p className="text-gray-600 text-sm">
+                    CitruSpire's Cumin-Lemon blend provides instant digestive support and refreshing wellness.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-green-200 hover:shadow-lg transition-all duration-300 group">
+              <CardContent className="p-0">
+                <div className="relative overflow-hidden rounded-t-lg">
+                  <img 
+                    src="/lovable-uploads/cfbe9a1e-2c1e-4cdf-8eb3-6d4b93d62e44.png" 
+                    alt="CoolDetox - Coriander Mint Ginger Natural Detox Infusion"
+                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+                <div className="p-6 text-center">
+                  <h3 className="text-xl font-semibold text-green-600 mb-2">Natural Detox</h3>
+                  <p className="text-gray-600 text-sm">
+                    CoolDetox features Coriander, Mint, and Ginger for natural cleansing and rejuvenation.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-purple-200 hover:shadow-lg transition-all duration-300 group">
+              <CardContent className="p-0">
+                <div className="relative overflow-hidden rounded-t-lg">
+                  <img 
+                    src="/lovable-uploads/6a70f8ba-4f96-4c5f-88d5-ff8b20a8e61a.png" 
+                    alt="CitruSpire Yellow Package - Premium Herbal Infusion for Daily Wellness"
+                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+                <div className="p-6 text-center">
+                  <h3 className="text-xl font-semibold text-purple-600 mb-2">Daily Vitality</h3>
+                  <p className="text-gray-600 text-sm">
+                    Premium herbal infusions designed to support your daily wellness routine with natural energy.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Benefits Section */}
+      <section className="py-16 bg-green-50">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-3 gap-8">
             <Card className="border-green-200 hover:shadow-lg transition-shadow">
