@@ -27,11 +27,7 @@ const PromotionManagement = () => {
   const deletePromotion = useDeletePromotion();
 
   const handleCreatePromotion = (formData: any) => {
-    createPromotion.mutate({
-      ...formData,
-      applicable_categories: [],
-      applicable_products: [],
-    });
+    createPromotion.mutate(formData);
   };
 
   const handleUpdatePromotion = (formData: any) => {

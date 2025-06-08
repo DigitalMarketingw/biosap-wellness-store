@@ -36,6 +36,8 @@ const promotionSchema = z.object({
   end_date: z.string().min(1, 'End date is required'),
   usage_limit: z.number().min(1).optional(),
   is_active: z.boolean(),
+  applicable_categories: z.array(z.string()).default([]),
+  applicable_products: z.array(z.string()).default([]),
 });
 
 type FormData = z.infer<typeof promotionSchema>;
@@ -69,15 +71,13 @@ export const PromotionForm = ({
       end_date: promotion?.end_date ? new Date(promotion.end_date).toISOString().split('T')[0] : '',
       usage_limit: promotion?.usage_limit || undefined,
       is_active: promotion?.is_active ?? true,
+      applicable_categories: promotion?.applicable_categories || [],
+      applicable_products: promotion?.applicable_products || [],
     },
   });
 
   const handleSubmit = (data: FormData) => {
-    onSubmit({
-      ...data,
-      applicable_categories: [],
-      applicable_products: [],
-    });
+    onSubmit(data);
     onClose();
     form.reset();
   };
