@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { Leaf } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface AuthLayoutProps {
@@ -15,8 +14,11 @@ const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
       <div className="max-w-md w-full space-y-8 bg-white rounded-xl shadow-lg p-8">
         <div className="text-center">
           <Link to="/" className="flex items-center justify-center space-x-2 mb-6">
-            <Leaf className="h-10 w-10 text-green-600" />
-            <span className="text-2xl font-bold text-green-800">BIOSAP</span>
+            <img 
+              src="/lovable-uploads/ab5ccc34-8661-4343-abac-8863eb7e8c1c.png" 
+              alt="BIOSAP Logo" 
+              className="h-10 w-auto"
+            />
           </Link>
           <h2 className="text-3xl font-bold text-gray-900">{title}</h2>
           <p className="mt-2 text-gray-600">{subtitle}</p>

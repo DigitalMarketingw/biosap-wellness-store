@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -71,8 +70,12 @@ const AdminLayout = () => {
       {/* Sidebar */}
       <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg">
         <div className="flex h-16 items-center px-6 border-b">
-          <Leaf className="h-8 w-8 text-green-600" />
-          <h1 className="ml-2 text-xl font-bold text-green-800">BIOSAP Admin</h1>
+          <img 
+            src="/lovable-uploads/ab5ccc34-8661-4343-abac-8863eb7e8c1c.png" 
+            alt="BIOSAP Logo" 
+            className="h-8 w-auto"
+          />
+          <h1 className="ml-2 text-xl font-bold text-green-800">Admin</h1>
         </div>
         
         <div className="p-4">

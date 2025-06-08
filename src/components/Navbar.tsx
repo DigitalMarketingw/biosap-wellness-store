@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Leaf, Search, Heart, ShoppingCart } from 'lucide-react';
+import { Search, Heart, ShoppingCart } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Link } from 'react-router-dom';
 import { useCart } from '@/contexts/CartContext';
@@ -20,8 +19,11 @@ const Navbar = () => {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-2">
-            <Leaf className="h-8 w-8 text-green-600" />
-            <h1 className="text-2xl font-bold text-green-800">BIOSAP</h1>
+            <img 
+              src="/lovable-uploads/ab5ccc34-8661-4343-abac-8863eb7e8c1c.png" 
+              alt="BIOSAP Logo" 
+              className="h-8 w-auto"
+            />
             <Badge variant="secondary" className="bg-green-100 text-green-700">Ayurvedic</Badge>
           </Link>
           

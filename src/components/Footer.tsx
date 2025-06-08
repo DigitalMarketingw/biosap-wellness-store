@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Leaf } from 'lucide-react';
 
@@ -9,8 +8,11 @@ const Footer = () => {
         <div className="grid md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center space-x-2 mb-4">
-              <Leaf className="h-6 w-6" />
-              <span className="text-xl font-bold">BIOSAP</span>
+              <img 
+                src="/lovable-uploads/ab5ccc34-8661-4343-abac-8863eb7e8c1c.png" 
+                alt="BIOSAP Logo" 
+                className="h-6 w-auto filter brightness-0 invert"
+              />
             </div>
             <p className="text-green-200 mb-4">
               Your trusted partner in Ayurvedic wellness, bringing ancient wisdom to modern life.
