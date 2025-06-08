@@ -95,7 +95,7 @@ const About = () => {
               </div>
               <div className="relative">
                 <img 
-                  src="/lovable-uploads/7c3f88dd-b74a-42c4-8e42-6c0a65f75f9a.png" 
+                  src="/lovable-uploads/ab5ccc34-8661-4343-abac-8863eb7e8c1c.png" 
                   alt="CitruSpire - Premium Ayurvedic herbal infusion showcasing traditional formulation"
                   className="rounded-lg shadow-lg w-full"
                 />
@@ -199,7 +199,7 @@ const About = () => {
                 <CardContent className="p-0">
                   <div className="grid md:grid-cols-2">
                     <img 
-                      src="/lovable-uploads/b1e9c91e-9966-4a0b-94e3-f2b9f4b8bf4e.png" 
+                      src="/lovable-uploads/2902c1b1-4f02-4a7c-8ea6-1f48a7664697.png" 
                       alt="SheVital - Women's wellness and hormonal balance support"
                       className="w-full h-48 md:h-full object-cover"
                     />
@@ -217,7 +217,7 @@ const About = () => {
                 <CardContent className="p-0">
                   <div className="grid md:grid-cols-2">
                     <img 
-                      src="/lovable-uploads/cfbe9a1e-2c1e-4cdf-8eb3-6d4b93d62e44.png" 
+                      src="/lovable-uploads/6a70f8ba-4f96-4c5f-88d5-ff8b20a8e61a.png" 
                       alt="CoolDetox - Natural detoxification and cleansing support"
                       className="w-full h-48 md:h-full object-cover"
                     />

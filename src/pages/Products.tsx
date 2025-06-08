@@ -143,7 +143,7 @@ const Products = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
             <div className="text-center">
               <img 
-                src="/lovable-uploads/b1e9c91e-9966-4a0b-94e3-f2b9f4b8bf4e.png" 
+                src="/lovable-uploads/2902c1b1-4f02-4a7c-8ea6-1f48a7664697.png" 
                 alt="SheVital - Women's Wellness Products"
                 className="w-full h-32 object-cover rounded-lg mb-2 opacity-90 hover:opacity-100 transition-opacity"
               />
@@ -151,7 +151,7 @@ const Products = () => {
             </div>
             <div className="text-center">
               <img 
-                src="/lovable-uploads/7c3f88dd-b74a-42c4-8e42-6c0a65f75f9a.png" 
+                src="/lovable-uploads/ab5ccc34-8661-4343-abac-8863eb7e8c1c.png" 
                 alt="CitruSpire - Digestive Health Products"
                 className="w-full h-32 object-cover rounded-lg mb-2 opacity-90 hover:opacity-100 transition-opacity"
               />
@@ -159,7 +159,7 @@ const Products = () => {
             </div>
             <div className="text-center">
               <img 
-                src="/lovable-uploads/cfbe9a1e-2c1e-4cdf-8eb3-6d4b93d62e44.png" 
+                src="/lovable-uploads/6a70f8ba-4f96-4c5f-88d5-ff8b20a8e61a.png" 
                 alt="CoolDetox - Natural Detox Products"
                 className="w-full h-32 object-cover rounded-lg mb-2 opacity-90 hover:opacity-100 transition-opacity"
               />
@@ -167,8 +167,8 @@ const Products = () => {
             </div>
             <div className="text-center">
               <img 
-                src="/lovable-uploads/6a70f8ba-4f96-4c5f-88d5-ff8b20a8e61a.png" 
-                alt="Premium Herbal Infusions - Daily Vitality"
+                src="/lovable-uploads/6bcfeaca-c21e-4f1a-8d9f-050fcbb1756b.png" 
+                alt="FEMVIT BRU - Daily Vitality"
                 className="w-full h-32 object-cover rounded-lg mb-2 opacity-90 hover:opacity-100 transition-opacity"
               />
               <p className="text-sm text-green-100">Daily Vitality</p>

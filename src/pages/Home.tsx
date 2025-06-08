@@ -167,7 +167,7 @@ const Home = () => {
               <CardContent className="p-0">
                 <div className="relative overflow-hidden rounded-t-lg">
                   <img 
-                    src="/lovable-uploads/b1e9c91e-9966-4a0b-94e3-f2b9f4b8bf4e.png" 
+                    src="/lovable-uploads/2902c1b1-4f02-4a7c-8ea6-1f48a7664697.png" 
                     alt="SheVital - Hormonal Balance Support with Green Tea and Shatavari"
                     className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                   />
@@ -185,7 +185,7 @@ const Home = () => {
               <CardContent className="p-0">
                 <div className="relative overflow-hidden rounded-t-lg">
                   <img 
-                    src="/lovable-uploads/7c3f88dd-b74a-42c4-8e42-6c0a65f75f9a.png" 
+                    src="/lovable-uploads/ab5ccc34-8661-4343-abac-8863eb7e8c1c.png" 
                     alt="CitruSpire - Cumin Lemon Instant Herbal Infusion for Digestive Health"
                     className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                   />
@@ -203,7 +203,7 @@ const Home = () => {
               <CardContent className="p-0">
                 <div className="relative overflow-hidden rounded-t-lg">
                   <img 
-                    src="/lovable-uploads/cfbe9a1e-2c1e-4cdf-8eb3-6d4b93d62e44.png" 
+                    src="/lovable-uploads/6a70f8ba-4f96-4c5f-88d5-ff8b20a8e61a.png" 
                     alt="CoolDetox - Coriander Mint Ginger Natural Detox Infusion"
                     className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                   />
@@ -221,8 +221,8 @@ const Home = () => {
               <CardContent className="p-0">
                 <div className="relative overflow-hidden rounded-t-lg">
                   <img 
-                    src="/lovable-uploads/6a70f8ba-4f96-4c5f-88d5-ff8b20a8e61a.png" 
-                    alt="CitruSpire Yellow Package - Premium Herbal Infusion for Daily Wellness"
+                    src="/lovable-uploads/6bcfeaca-c21e-4f1a-8d9f-050fcbb1756b.png" 
+                    alt="FEMVIT BRU - Premium Daily Wellness Support"
                     className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
