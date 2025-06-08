@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,9 +32,8 @@ const Navbar = () => {
             <nav className="flex space-x-6">
               <Link to="/" className="text-green-700 hover:text-green-900 font-medium">Home</Link>
               <Link to="/products" className="text-green-700 hover:text-green-900 font-medium">Products</Link>
-              <a href="#" className="text-green-700 hover:text-green-900 font-medium">Categories</a>
-              <a href="#" className="text-green-700 hover:text-green-900 font-medium">Wellness</a>
-              <a href="#" className="text-green-700 hover:text-green-900 font-medium">About</a>
+              <Link to="/categories" className="text-green-700 hover:text-green-900 font-medium">Categories</Link>
+              <Link to="/about" className="text-green-700 hover:text-green-900 font-medium">About</Link>
             </nav>
           </div>
 

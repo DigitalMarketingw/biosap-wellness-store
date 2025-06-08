@@ -13,6 +13,9 @@ import AdminLayout from "./components/admin/AdminLayout";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Home from "./pages/Home";
 import Products from "./pages/Products";
+import ProductDetails from "./pages/ProductDetails";
+import About from "./pages/About";
+import Categories from "./pages/Categories";
 import Cart from "./pages/Cart";
 import Wishlist from "./pages/Wishlist";
 import Checkout from "./pages/Checkout";
@@ -53,6 +56,9 @@ const App = () => (
                   {/* Public Routes */}
                   <Route path="/" element={<Layout><Home /></Layout>} />
                   <Route path="/products" element={<Layout><Products /></Layout>} />
+                  <Route path="/product/:id" element={<Layout><ProductDetails /></Layout>} />
+                  <Route path="/about" element={<Layout><About /></Layout>} />
+                  <Route path="/categories" element={<Layout><Categories /></Layout>} />
                   <Route path="/cart" element={<Layout><Cart /></Layout>} />
                   <Route path="/wishlist" element={<Layout><Wishlist /></Layout>} />
                   <Route path="/checkout" element={

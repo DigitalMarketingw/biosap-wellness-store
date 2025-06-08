@@ -40,7 +40,7 @@ const ProductManagement = () => {
         .from('products')
         .select(`
           *,
-          categories(name)
+          categories!products_category_id_fkey(name)
         `)
         .order('created_at', { ascending: false });
 

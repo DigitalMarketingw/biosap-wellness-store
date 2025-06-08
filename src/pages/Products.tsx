@@ -1,6 +1,7 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,11 +13,37 @@ import { Search, Filter, X } from 'lucide-react';
 import ProductCard from '@/components/ProductCard';
 
 const Products = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [priceRange, setPriceRange] = useState([0, 10000]);
   const [availability, setAvailability] = useState('all');
   const [sortBy, setSortBy] = useState('name');
+
+  // Handle URL category parameter
+  useEffect(() => {
+    const categoryFromUrl = searchParams.get('category');
+    if (categoryFromUrl && categoryFromUrl !== selectedCategory) {
+      setSelectedCategory(categoryFromUrl);
+    }
+  }, [searchParams]);
+
+  // Update URL when category changes
+  useEffect(() => {
+    if (selectedCategory !== 'all') {
+      setSearchParams(prev => {
+        const newParams = new URLSearchParams(prev);
+        newParams.set('category', selectedCategory);
+        return newParams;
+      });
+    } else {
+      setSearchParams(prev => {
+        const newParams = new URLSearchParams(prev);
+        newParams.delete('category');
+        return newParams;
+      });
+    }
+  }, [selectedCategory]);
 
   // Fetch products
   const { data: products, isLoading: productsLoading } = useQuery({
@@ -54,6 +81,9 @@ const Products = () => {
       const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            product.description?.toLowerCase().includes(searchTerm.toLowerCase());
 
+      // Category filter
+      const matchesCategory = selectedCategory === 'all' || product.category_id === selectedCategory;
+
       // Price range filter
       const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
 
@@ -62,7 +92,7 @@ const Products = () => {
                                  (availability === 'in-stock' && product.stock > 0) ||
                                  (availability === 'out-of-stock' && product.stock === 0);
 
-      return matchesSearch && matchesPrice && matchesAvailability;
+      return matchesSearch && matchesCategory && matchesPrice && matchesAvailability;
     });
 
     // Sort products
