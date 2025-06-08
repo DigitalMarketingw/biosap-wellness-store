@@ -66,7 +66,7 @@ const EditProductDialog: React.FC<EditProductDialogProps> = ({
     image_urls: [] as string[],
     ingredients: '',
     usage_instructions: '',
-    benefits: [] as string[]
+    benefits: '' as string
   });
 
   useEffect(() => {
@@ -86,7 +86,7 @@ const EditProductDialog: React.FC<EditProductDialogProps> = ({
         image_urls: product.image_urls || [],
         ingredients: product.ingredients || '',
         usage_instructions: product.usage_instructions || '',
-        benefits: product.benefits || []
+        benefits: Array.isArray(product.benefits) ? product.benefits.join(', ') : ''
       });
     }
   }, [product, open]);
@@ -127,6 +127,13 @@ const EditProductDialog: React.FC<EditProductDialogProps> = ({
     }
   };
 
+  useEffect(() => {
+    if (open) {
+      fetchCategories();
+      fetchSuppliers();
+    }
+  }, [open]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!product) return;
@@ -134,9 +141,9 @@ const EditProductDialog: React.FC<EditProductDialogProps> = ({
     setLoading(true);
 
     try {
-      const benefitsArray = typeof formData.benefits === 'string' 
+      const benefitsArray = formData.benefits
         ? formData.benefits.split(',').map(b => b.trim()).filter(b => b)
-        : formData.benefits;
+        : [];
 
       const updateData = {
         name: formData.name,
@@ -191,7 +198,7 @@ const EditProductDialog: React.FC<EditProductDialogProps> = ({
   const handleBenefitsChange = (value: string) => {
     setFormData(prev => ({
       ...prev,
-      benefits: value.split(',').map(b => b.trim()).filter(b => b)
+      benefits: value
     }));
   };
 
@@ -345,7 +352,7 @@ const EditProductDialog: React.FC<EditProductDialogProps> = ({
             <Label htmlFor="benefits">Benefits (comma-separated)</Label>
             <Input
               id="benefits"
-              value={Array.isArray(formData.benefits) ? formData.benefits.join(', ') : formData.benefits}
+              value={formData.benefits}
               onChange={(e) => handleBenefitsChange(e.target.value)}
               placeholder="e.g., Stress relief, Better sleep, Improved digestion"
             />
