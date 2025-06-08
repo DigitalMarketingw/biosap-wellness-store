@@ -205,12 +205,12 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     });
   }, []);
 
-  // Check if an image URL is valid (not placeholder or malformed)
+  // Check if an image URL is valid (not just placeholder)
   const isValidImageUrl = useCallback((url: string) => {
     return url && 
            url !== '/placeholder.svg' && 
-           !url.includes('placeholder') &&
-           (url.startsWith('http') || url.startsWith('https'));
+           !url.includes('placeholder.svg') &&
+           url.trim() !== '';
   }, []);
 
   return (
@@ -276,17 +276,12 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
           {images.map((imageUrl, index) => (
             <div key={index} className="relative group">
               <div className="aspect-square rounded-lg overflow-hidden border-2 border-gray-200 bg-gray-100">
-                {imageErrors.has(index) || !isValidImageUrl(imageUrl) ? (
+                {imageErrors.has(index) ? (
                   <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
                     <AlertCircle className="h-8 w-8 mb-2" />
                     <span className="text-xs text-center px-2">
-                      {!isValidImageUrl(imageUrl) ? 'Invalid image URL' : 'Failed to load image'}
+                      Failed to load image
                     </span>
-                    {!isValidImageUrl(imageUrl) && (
-                      <span className="text-xs text-gray-500 mt-1 px-2 break-all">
-                        {imageUrl.length > 30 ? `${imageUrl.substring(0, 30)}...` : imageUrl}
-                      </span>
-                    )}
                   </div>
                 ) : (
                   <img

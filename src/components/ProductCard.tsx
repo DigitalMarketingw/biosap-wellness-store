@@ -32,11 +32,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const getValidImageUrl = () => {
     if (product.image_urls && product.image_urls.length > 0) {
       const firstImage = product.image_urls[0];
-      // Check if the image URL is valid (not placeholder and has proper format)
+      // Check if the image URL exists and is not a placeholder
       if (firstImage && 
           firstImage !== '/placeholder.svg' && 
-          !firstImage.includes('placeholder') &&
-          (firstImage.startsWith('http') || firstImage.startsWith('https'))) {
+          !firstImage.includes('placeholder.svg') &&
+          firstImage.trim() !== '') {
         return firstImage;
       }
     }
