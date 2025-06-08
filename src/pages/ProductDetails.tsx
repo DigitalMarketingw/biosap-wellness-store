@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -61,12 +60,7 @@ const ProductDetails = () => {
 
   const handleAddToCart = () => {
     if (product) {
-      addToCart({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        image: product.image_urls?.[0] || '/placeholder.svg'
-      }, quantity);
+      addToCart(product.id, quantity);
       
       toast({
         title: "Added to cart",
@@ -85,12 +79,7 @@ const ProductDetails = () => {
         description: `${product.name} has been removed from your wishlist.`,
       });
     } else {
-      addToWishlist({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        image: product.image_urls?.[0] || '/placeholder.svg'
-      });
+      addToWishlist(product.id);
       toast({
         title: "Added to wishlist",
         description: `${product.name} has been added to your wishlist.`,

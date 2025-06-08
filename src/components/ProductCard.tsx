@@ -38,12 +38,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     e.preventDefault();
     e.stopPropagation();
     
-    addToCart({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: imageUrl
-    });
+    addToCart(product.id);
     
     toast({
       title: "Added to cart",
@@ -62,12 +57,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         description: `${product.name} has been removed from your wishlist.`,
       });
     } else {
-      addToWishlist({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        image: imageUrl
-      });
+      addToWishlist(product.id);
       toast({
         title: "Added to wishlist",
         description: `${product.name} has been added to your wishlist.`,
