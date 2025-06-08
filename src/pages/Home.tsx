@@ -93,8 +93,8 @@ const Home = () => {
             <div className="relative">
               <div className="aspect-square bg-white/10 rounded-full blur-3xl absolute inset-0 transform scale-150"></div>
               <img 
-                src="/lovable-uploads/ac01bd08-854c-47c1-a2c1-2cf2884eab66.png" 
-                alt="Woman enjoying BIOSAP Ayurvedic wellness products - natural health and vitality"
+                src="/lovable-uploads/280833e3-0bcb-4a9d-81b7-bd98ee95388a.png" 
+                alt="BIOSAP DigestEase - Fennel Lemon Instant Herbal Infusion for digestive wellness"
                 className="relative z-10 w-full h-auto rounded-2xl shadow-2xl"
               />
             </div>
@@ -217,19 +217,19 @@ const Home = () => {
               </CardContent>
             </Card>
             
-            <Card className="border-purple-200 hover:shadow-lg transition-all duration-300 group">
+            <Card className="border-blue-200 hover:shadow-lg transition-all duration-300 group">
               <CardContent className="p-0">
                 <div className="relative overflow-hidden rounded-t-lg">
                   <img 
-                    src="/lovable-uploads/6bcfeaca-c21e-4f1a-8d9f-050fcbb1756b.png" 
-                    alt="FEMVIT BRU - Premium Daily Wellness Support"
+                    src="/lovable-uploads/280833e3-0bcb-4a9d-81b7-bd98ee95388a.png" 
+                    alt="DigestEase - Fennel Lemon Instant Herbal Infusion for Digestive Health"
                     className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
                 <div className="p-6 text-center">
-                  <h3 className="text-xl font-semibold text-purple-600 mb-2">Daily Vitality</h3>
+                  <h3 className="text-xl font-semibold text-blue-600 mb-2">Digestive Wellness</h3>
                   <p className="text-gray-600 text-sm">
-                    Premium herbal infusions designed to support your daily wellness routine with natural energy.
+                    DigestEase combines Fennel and Lemon for effective digestive cleanse and soothing relief.
                   </p>
                 </div>
               </CardContent>
