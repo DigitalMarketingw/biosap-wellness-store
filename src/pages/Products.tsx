@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
@@ -151,8 +150,8 @@ const Products = () => {
             </div>
             <div className="text-center">
               <img 
-                src="/lovable-uploads/280833e3-0bcb-4a9d-81b7-bd98ee95388a.png" 
-                alt="CitruSpire - Digestive Health Products"
+                src="/lovable-uploads/1b0830d9-a2f7-49d9-9dbf-f738f13913fc.png" 
+                alt="SmokyGinger - Digestive Health Products"
                 className="w-full h-32 object-cover rounded-lg mb-2 opacity-90 hover:opacity-100 transition-opacity"
               />
               <p className="text-sm text-green-100">Digestive Health</p>
@@ -167,8 +166,8 @@ const Products = () => {
             </div>
             <div className="text-center">
               <img 
-                src="/lovable-uploads/280833e3-0bcb-4a9d-81b7-bd98ee95388a.png" 
-                alt="FEMVIT BRU - Daily Vitality"
+                src="/lovable-uploads/da4caabd-4199-4ec1-b35e-d45a85bb2782.png" 
+                alt="SheVital - Daily Vitality"
                 className="w-full h-32 object-cover rounded-lg mb-2 opacity-90 hover:opacity-100 transition-opacity"
               />
               <p className="text-sm text-green-100">Daily Vitality</p>
