@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,7 +28,22 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const { toast } = useToast();
   
-  const imageUrl = product.image_urls?.[0] || '/placeholder.svg';
+  // Helper function to get a valid image URL
+  const getValidImageUrl = () => {
+    if (product.image_urls && product.image_urls.length > 0) {
+      const firstImage = product.image_urls[0];
+      // Check if the image URL is valid (not placeholder and has proper format)
+      if (firstImage && 
+          firstImage !== '/placeholder.svg' && 
+          !firstImage.includes('placeholder') &&
+          (firstImage.startsWith('http') || firstImage.startsWith('https'))) {
+        return firstImage;
+      }
+    }
+    return '/placeholder.svg';
+  };
+  
+  const imageUrl = getValidImageUrl();
   const rating = product.rating || 0;
   const reviewCount = product.review_count || 0;
   const inWishlist = isInWishlist(product.id);
@@ -74,6 +88,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               src={imageUrl}
               alt={product.name}
               className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                if (target.src !== '/placeholder.svg') {
+                  target.src = '/placeholder.svg';
+                }
+              }}
             />
             
             {product.is_featured && (

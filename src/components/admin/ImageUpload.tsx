@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -206,6 +205,14 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     });
   }, []);
 
+  // Check if an image URL is valid (not placeholder or malformed)
+  const isValidImageUrl = useCallback((url: string) => {
+    return url && 
+           url !== '/placeholder.svg' && 
+           !url.includes('placeholder') &&
+           (url.startsWith('http') || url.startsWith('https'));
+  }, []);
+
   return (
     <div className="space-y-4">
       {/* Upload Area */}
@@ -269,10 +276,17 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
           {images.map((imageUrl, index) => (
             <div key={index} className="relative group">
               <div className="aspect-square rounded-lg overflow-hidden border-2 border-gray-200 bg-gray-100">
-                {imageErrors.has(index) ? (
+                {imageErrors.has(index) || !isValidImageUrl(imageUrl) ? (
                   <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
                     <AlertCircle className="h-8 w-8 mb-2" />
-                    <span className="text-xs text-center">Failed to load image</span>
+                    <span className="text-xs text-center px-2">
+                      {!isValidImageUrl(imageUrl) ? 'Invalid image URL' : 'Failed to load image'}
+                    </span>
+                    {!isValidImageUrl(imageUrl) && (
+                      <span className="text-xs text-gray-500 mt-1 px-2 break-all">
+                        {imageUrl.length > 30 ? `${imageUrl.substring(0, 30)}...` : imageUrl}
+                      </span>
+                    )}
                   </div>
                 ) : (
                   <img
