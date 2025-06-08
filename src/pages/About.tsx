@@ -199,8 +199,8 @@ const About = () => {
                 <CardContent className="p-0">
                   <div className="grid md:grid-cols-2">
                     <img 
-                      src="/lovable-uploads/2902c1b1-4f02-4a7c-8ea6-1f48a7664697.png" 
-                      alt="SheVital - Women's wellness and hormonal balance support"
+                      src="/lovable-uploads/df78a984-412e-4645-b1d7-1ed1b8aacd7b.png" 
+                      alt="FEMVIT BRU - Women's wellness and hormonal balance support"
                       className="w-full h-48 md:h-full object-cover"
                     />
                     <div className="p-6 flex flex-col justify-center">
@@ -217,7 +217,7 @@ const About = () => {
                 <CardContent className="p-0">
                   <div className="grid md:grid-cols-2">
                     <img 
-                      src="/lovable-uploads/6a70f8ba-4f96-4c5f-88d5-ff8b20a8e61a.png" 
+                      src="/lovable-uploads/1aa37669-de0f-422b-81df-fabede344482.png" 
                       alt="CoolDetox - Natural detoxification and cleansing support"
                       className="w-full h-48 md:h-full object-cover"
                     />

@@ -167,15 +167,15 @@ const Home = () => {
               <CardContent className="p-0">
                 <div className="relative overflow-hidden rounded-t-lg">
                   <img 
-                    src="/lovable-uploads/2902c1b1-4f02-4a7c-8ea6-1f48a7664697.png" 
-                    alt="SheVital - Hormonal Balance Support with Green Tea and Shatavari"
+                    src="/lovable-uploads/df78a984-412e-4645-b1d7-1ed1b8aacd7b.png" 
+                    alt="FEMVIT BRU - Women's Wellness Support with Natural Herbal Ingredients"
                     className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
                 <div className="p-6 text-center">
                   <h3 className="text-xl font-semibold text-pink-600 mb-2">Women's Wellness</h3>
                   <p className="text-gray-600 text-sm">
-                    SheVital combines Green Tea and Shatavari for optimal hormonal balance and women's health support.
+                    FEMVIT BRU provides comprehensive support for women's health with carefully selected natural ingredients.
                   </p>
                 </div>
               </CardContent>
