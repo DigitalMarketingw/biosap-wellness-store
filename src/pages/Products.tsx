@@ -159,7 +159,7 @@ const Products = () => {
             </div>
             <div className="text-center">
               <img 
-                src="/lovable-uploads/6a70f8ba-4f96-4c5f-88d5-ff8b20a8e61a.png" 
+                src="/lovable-uploads/1aa37669-de0f-422b-81df-fabede344482.png" 
                 alt="CoolDetox - Natural Detox Products"
                 className="w-full h-32 object-cover rounded-lg mb-2 opacity-90 hover:opacity-100 transition-opacity"
               />
@@ -167,7 +167,7 @@ const Products = () => {
             </div>
             <div className="text-center">
               <img 
-                src="/lovable-uploads/6bcfeaca-c21e-4f1a-8d9f-050fcbb1756b.png" 
+                src="/lovable-uploads/280833e3-0bcb-4a9d-81b7-bd98ee95388a.png" 
                 alt="FEMVIT BRU - Daily Vitality"
                 className="w-full h-32 object-cover rounded-lg mb-2 opacity-90 hover:opacity-100 transition-opacity"
               />
