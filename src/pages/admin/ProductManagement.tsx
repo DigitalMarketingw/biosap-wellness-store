@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAdmin } from '@/contexts/AdminContext';
 import { Plus, Search, Edit, Trash2, Package, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import AddProductDialog from '@/components/admin/AddProductDialog';
 
 interface Product {
   id: string;
@@ -28,6 +28,7 @@ const ProductManagement = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showAddDialog, setShowAddDialog] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -130,7 +131,10 @@ const ProductManagement = () => {
           <h1 className="text-3xl font-bold text-gray-900">Product Management</h1>
           <p className="text-gray-600">Manage your Ayurvedic products inventory</p>
         </div>
-        <Button className="bg-green-600 hover:bg-green-700">
+        <Button 
+          className="bg-green-600 hover:bg-green-700"
+          onClick={() => setShowAddDialog(true)}
+        >
           <Plus className="mr-2 h-4 w-4" />
           Add Product
         </Button>
@@ -228,13 +232,22 @@ const ProductManagement = () => {
             <p className="text-gray-600 mb-4">
               {searchTerm ? 'No products match your search criteria.' : 'Get started by adding your first product.'}
             </p>
-            <Button className="bg-green-600 hover:bg-green-700">
+            <Button 
+              className="bg-green-600 hover:bg-green-700"
+              onClick={() => setShowAddDialog(true)}
+            >
               <Plus className="mr-2 h-4 w-4" />
               Add Product
             </Button>
           </CardContent>
         </Card>
       )}
+
+      <AddProductDialog
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+        onProductAdded={fetchProducts}
+      />
     </div>
   );
 };
