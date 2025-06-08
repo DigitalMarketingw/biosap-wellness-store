@@ -143,7 +143,7 @@ const Products = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
             <div className="text-center">
               <img 
-                src="/lovable-uploads/2902c1b1-4f02-4a7c-8ea6-1f48a7664697.png" 
+                src="/lovable-uploads/df78a984-412e-4645-b1d7-1ed1b8aacd7b.png" 
                 alt="SheVital - Women's Wellness Products"
                 className="w-full h-32 object-cover rounded-lg mb-2 opacity-90 hover:opacity-100 transition-opacity"
               />
