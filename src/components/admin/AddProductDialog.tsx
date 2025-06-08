@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAdmin } from '@/contexts/AdminContext';
 import { X, Plus } from 'lucide-react';
+import ImageUpload from './ImageUpload';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
@@ -56,6 +57,7 @@ const AddProductDialog = ({ open, onOpenChange, onProductAdded }: AddProductDial
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [benefits, setBenefits] = useState<string[]>([]);
   const [newBenefit, setNewBenefit] = useState('');
+  const [productImages, setProductImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { logAdminActivity } = useAdmin();
@@ -142,6 +144,7 @@ const AddProductDialog = ({ open, onOpenChange, onProductAdded }: AddProductDial
         ingredients: data.ingredients || null,
         usage_instructions: data.usage_instructions || null,
         benefits: benefits.length > 0 ? benefits : null,
+        image_urls: productImages.length > 0 ? productImages : null,
         is_featured: data.is_featured,
         is_active: data.is_active,
       };
@@ -163,6 +166,7 @@ const AddProductDialog = ({ open, onOpenChange, onProductAdded }: AddProductDial
 
       form.reset();
       setBenefits([]);
+      setProductImages([]);
       onProductAdded();
       onOpenChange(false);
     } catch (error) {
@@ -230,6 +234,19 @@ const AddProductDialog = ({ open, onOpenChange, onProductAdded }: AddProductDial
                 </FormItem>
               )}
             />
+
+            {/* Product Images */}
+            <div>
+              <Label className="text-base font-semibold">Product Images</Label>
+              <p className="text-sm text-gray-600 mb-4">
+                Upload up to 6 high-quality images. Images will be automatically optimized for fast loading.
+              </p>
+              <ImageUpload
+                images={productImages}
+                onImagesChange={setProductImages}
+                maxImages={6}
+              />
+            </div>
 
             {/* Pricing and Inventory */}
             <div className="grid grid-cols-3 gap-4">

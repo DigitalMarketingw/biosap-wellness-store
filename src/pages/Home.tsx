@@ -7,6 +7,7 @@ import ProductCard from '@/components/ProductCard';
 import CategoryCard from '@/components/CategoryCard';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Link } from 'react-router-dom';
 
 const Home = () => {
   const { data: featuredProducts } = useQuery({
@@ -61,12 +62,16 @@ const Home = () => {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="bg-white text-green-600 hover:bg-green-50 px-8">
-                  Shop Now
-                </Button>
-                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-green-600 px-8">
-                  Learn More
-                </Button>
+                <Link to="/products">
+                  <Button size="lg" className="bg-white text-green-600 hover:bg-green-50 px-8">
+                    Shop Now
+                  </Button>
+                </Link>
+                <Link to="/about">
+                  <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-green-600 px-8">
+                    Learn More
+                  </Button>
+                </Link>
               </div>
               
               <div className="flex items-center space-x-6 pt-4">
@@ -136,9 +141,11 @@ const Home = () => {
           </div>
           
           <div className="text-center mt-12">
-            <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white px-8">
-              View All Products
-            </Button>
+            <Link to="/products">
+              <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white px-8">
+                View All Products
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
