@@ -9,7 +9,7 @@ const Footer = () => {
           <div>
             <div className="flex items-center space-x-2 mb-4">
               <img 
-                src="/lovable-uploads/ab5ccc34-8661-4343-abac-8863eb7e8c1c.png" 
+                src="/lovable-uploads/2902c1b1-4f02-4a7c-8ea6-1f48a7664697.png" 
                 alt="BIOSAP Logo" 
                 className="h-6 w-auto filter brightness-0 invert"
               />
