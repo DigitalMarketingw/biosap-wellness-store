@@ -9,6 +9,63 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      addresses: {
+        Row: {
+          address_line_1: string
+          address_line_2: string | null
+          city: string
+          company: string | null
+          country: string
+          created_at: string
+          first_name: string
+          id: string
+          is_default: boolean | null
+          last_name: string
+          phone: string | null
+          postal_code: string
+          state: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address_line_1: string
+          address_line_2?: string | null
+          city: string
+          company?: string | null
+          country?: string
+          created_at?: string
+          first_name: string
+          id?: string
+          is_default?: boolean | null
+          last_name: string
+          phone?: string | null
+          postal_code: string
+          state: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address_line_1?: string
+          address_line_2?: string | null
+          city?: string
+          company?: string | null
+          country?: string
+          created_at?: string
+          first_name?: string
+          id?: string
+          is_default?: boolean | null
+          last_name?: string
+          phone?: string | null
+          postal_code?: string
+          state?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       admin_activity_logs: {
         Row: {
           action: string
@@ -203,6 +260,47 @@ export type Database = {
           },
         ]
       }
+      invoices: {
+        Row: {
+          created_at: string
+          download_count: number | null
+          downloaded_at: string | null
+          generated_at: string
+          id: string
+          invoice_number: string
+          order_id: string
+          pdf_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          download_count?: number | null
+          downloaded_at?: string | null
+          generated_at?: string
+          id?: string
+          invoice_number: string
+          order_id: string
+          pdf_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          download_count?: number | null
+          downloaded_at?: string | null
+          generated_at?: string
+          id?: string
+          invoice_number?: string
+          order_id?: string
+          pdf_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           created_at: string
@@ -248,31 +346,43 @@ export type Database = {
       orders: {
         Row: {
           created_at: string
+          delivered_at: string | null
+          estimated_delivery: string | null
           id: string
           payment_method: string
+          shipped_at: string | null
           shipping_address: Json
           status: string
           total_amount: number
+          tracking_number: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          delivered_at?: string | null
+          estimated_delivery?: string | null
           id?: string
           payment_method: string
+          shipped_at?: string | null
           shipping_address: Json
           status?: string
           total_amount: number
+          tracking_number?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
+          delivered_at?: string | null
+          estimated_delivery?: string | null
           id?: string
           payment_method?: string
+          shipped_at?: string | null
           shipping_address?: Json
           status?: string
           total_amount?: number
+          tracking_number?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -394,37 +504,49 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
           company_id: string | null
           created_at: string
+          date_of_birth: string | null
           email: string
           first_name: string | null
           id: string
           last_name: string | null
           last_sign_in_at: string | null
           parent_user_id: string | null
+          phone_number: string | null
           role: string
+          updated_at: string | null
         }
         Insert: {
+          avatar_url?: string | null
           company_id?: string | null
           created_at?: string
+          date_of_birth?: string | null
           email: string
           first_name?: string | null
           id: string
           last_name?: string | null
           last_sign_in_at?: string | null
           parent_user_id?: string | null
+          phone_number?: string | null
           role: string
+          updated_at?: string | null
         }
         Update: {
+          avatar_url?: string | null
           company_id?: string | null
           created_at?: string
+          date_of_birth?: string | null
           email?: string
           first_name?: string | null
           id?: string
           last_name?: string | null
           last_sign_in_at?: string | null
           parent_user_id?: string | null
+          phone_number?: string | null
           role?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -566,6 +688,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_preferences: {
+        Row: {
+          created_at: string
+          email_notifications: boolean | null
+          id: string
+          marketing_emails: boolean | null
+          newsletter: boolean | null
+          order_updates: boolean | null
+          sms_notifications: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_notifications?: boolean | null
+          id?: string
+          marketing_emails?: boolean | null
+          newsletter?: boolean | null
+          order_updates?: boolean | null
+          sms_notifications?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email_notifications?: boolean | null
+          id?: string
+          marketing_emails?: boolean | null
+          newsletter?: boolean | null
+          order_updates?: boolean | null
+          sms_notifications?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       wishlist_items: {
         Row: {
           created_at: string
@@ -600,6 +758,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_invoice_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_admin_role: {
         Args: { user_id?: string }
         Returns: Database["public"]["Enums"]["admin_role"]
