@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Leaf, Menu, X, ShoppingCart, Heart, User } from 'lucide-react';
+import { Menu, X, ShoppingCart, Heart, User } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useWishlist } from '@/contexts/WishlistContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -40,8 +40,11 @@ const Navbar = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <Leaf className="h-8 w-8 text-green-600" />
-            <span className="text-xl font-bold text-green-800">BIOSAP Ayu</span>
+            <img 
+              src="/lovable-uploads/319c00b0-f81f-4cc6-b556-2a25b4c8c865.png" 
+              alt="BIOSAP" 
+              className="h-8 w-auto"
+            />
           </Link>
 
           {/* Desktop Navigation */}
