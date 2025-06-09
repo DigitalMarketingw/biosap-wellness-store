@@ -1,103 +1,195 @@
 
-import React from 'react';
+import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Heart, ShoppingCart } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Link } from 'react-router-dom';
+import { Leaf, Menu, X, ShoppingCart, Heart, User } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useWishlist } from '@/contexts/WishlistContext';
 import { useAuth } from '@/contexts/AuthContext';
 import UserMenu from '@/components/auth/UserMenu';
 
 const Navbar = () => {
-  const { getTotalItems } = useCart();
+  const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
+  const { items } = useCart();
   const { items: wishlistItems } = useWishlist();
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
+
+  const navigation = [
+    { name: 'Home', href: '/' },
+    { name: 'Products', href: '/products' },
+    { name: 'Categories', href: '/categories' },
+    { name: 'About', href: '/about' },
+    { name: 'Contact', href: '/contact' },
+  ];
+
+  const cartItemCount = items.reduce((total, item) => total + item.quantity, 0);
+  const wishlistItemCount = wishlistItems.length;
+
+  const isCurrentPath = (path: string) => {
+    if (path === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname.startsWith(path);
+  };
 
   return (
-    <header className="bg-white shadow-sm border-b border-green-100">
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
+    <nav className="bg-white shadow-lg border-b border-green-100 sticky top-0 z-50">
+      <div className="container mx-auto px-4">
+        <div className="flex justify-between items-center h-16">
+          {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <img 
-              src="/lovable-uploads/2902c1b1-4f02-4a7c-8ea6-1f48a7664697.png" 
-              alt="BIOSAP Logo" 
-              className="h-8 w-auto"
-            />
-            {/* <Badge variant="secondary" className="bg-green-100 text-green-700">Ayurvedic</Badge> */}
+            <Leaf className="h-8 w-8 text-green-600" />
+            <span className="text-xl font-bold text-green-800">BIOSAP Ayu</span>
           </Link>
-          
-          <div className="hidden md:flex items-center space-x-6">
-            <nav className="flex space-x-6">
-              <Link to="/" className="text-green-700 hover:text-green-900 font-medium">Home</Link>
-              <Link to="/products" className="text-green-700 hover:text-green-900 font-medium">Products</Link>
-              <Link to="/categories" className="text-green-700 hover:text-green-900 font-medium">Categories</Link>
-              <Link to="/about" className="text-green-700 hover:text-green-900 font-medium">About</Link>
-            </nav>
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-8">
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                to={item.href}
+                className={`font-medium transition-colors hover:text-green-600 ${
+                  isCurrentPath(item.href) 
+                    ? 'text-green-600 border-b-2 border-green-600 pb-1' 
+                    : 'text-gray-700'
+                }`}
+              >
+                {item.name}
+              </Link>
+            ))}
           </div>
 
-          <div className="flex items-center space-x-4">
-            <div className="relative hidden lg:block">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-green-500 h-4 w-4" />
-              <Input 
-                placeholder="Search natural products..." 
-                className="pl-10 w-64 border-green-200 focus:border-green-400"
-              />
-            </div>
-            
-            <Link to="/wishlist">
-              <Button variant="ghost" size="icon" className="text-green-600 hover:text-green-800 relative">
+          {/* Desktop Actions */}
+          <div className="hidden md:flex items-center space-x-4">
+            {/* Wishlist */}
+            <Link to="/wishlist" className="relative">
+              <Button variant="ghost" size="sm" className="p-2">
                 <Heart className="h-5 w-5" />
-                {wishlistItems.length > 0 && (
-                  <Badge 
-                    variant="secondary" 
-                    className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-green-600 text-white text-xs"
-                  >
-                    {wishlistItems.length}
+                {wishlistItemCount > 0 && (
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-red-500">
+                    {wishlistItemCount}
                   </Badge>
                 )}
               </Button>
             </Link>
-            
-            <Link to="/cart">
-              <Button variant="ghost" size="icon" className="text-green-600 hover:text-green-800 relative">
+
+            {/* Cart */}
+            <Link to="/cart" className="relative">
+              <Button variant="ghost" size="sm" className="p-2">
                 <ShoppingCart className="h-5 w-5" />
-                {getTotalItems() > 0 && (
-                  <Badge 
-                    variant="secondary" 
-                    className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-green-600 text-white text-xs"
-                  >
-                    {getTotalItems()}
+                {cartItemCount > 0 && (
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-green-600">
+                    {cartItemCount}
                   </Badge>
                 )}
               </Button>
             </Link>
-            
-            {!loading && (
-              <>
+
+            {/* User Authentication */}
+            {user ? (
+              <UserMenu />
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Link to="/auth/signin">
+                  <Button variant="ghost" size="sm">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link to="/auth/signup">
+                  <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                    Sign Up
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile menu button */}
+          <div className="md:hidden">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsOpen(!isOpen)}
+              className="p-2"
+            >
+              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </Button>
+          </div>
+        </div>
+
+        {/* Mobile Navigation */}
+        {isOpen && (
+          <div className="md:hidden py-4 border-t border-green-100">
+            <div className="flex flex-col space-y-3">
+              {navigation.map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={`font-medium transition-colors hover:text-green-600 py-2 ${
+                    isCurrentPath(item.href) 
+                      ? 'text-green-600 border-l-4 border-green-600 pl-3' 
+                      : 'text-gray-700'
+                  }`}
+                  onClick={() => setIsOpen(false)}
+                >
+                  {item.name}
+                </Link>
+              ))}
+              
+              <div className="flex items-center space-x-4 pt-4 border-t border-gray-200">
+                {/* Mobile Wishlist */}
+                <Link to="/wishlist" className="relative" onClick={() => setIsOpen(false)}>
+                  <Button variant="ghost" size="sm" className="p-2">
+                    <Heart className="h-5 w-5" />
+                    {wishlistItemCount > 0 && (
+                      <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-red-500">
+                        {wishlistItemCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </Link>
+
+                {/* Mobile Cart */}
+                <Link to="/cart" className="relative" onClick={() => setIsOpen(false)}>
+                  <Button variant="ghost" size="sm" className="p-2">
+                    <ShoppingCart className="h-5 w-5" />
+                    {cartItemCount > 0 && (
+                      <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-green-600">
+                        {cartItemCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </Link>
+
+                {/* Mobile User Authentication */}
                 {user ? (
-                  <UserMenu />
+                  <Link to="/profile" onClick={() => setIsOpen(false)}>
+                    <Button variant="ghost" size="sm" className="p-2">
+                      <User className="h-5 w-5" />
+                    </Button>
+                  </Link>
                 ) : (
-                  <div className="flex space-x-2">
-                    <Link to="/auth/signin">
-                      <Button variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
+                  <div className="flex flex-col space-y-2 flex-1">
+                    <Link to="/auth/signin" onClick={() => setIsOpen(false)}>
+                      <Button variant="ghost" size="sm" className="w-full">
                         Sign In
                       </Button>
                     </Link>
-                    <Link to="/auth/signup">
-                      <Button className="bg-green-600 hover:bg-green-700 text-white">
-                        Register
+                    <Link to="/auth/signup" onClick={() => setIsOpen(false)}>
+                      <Button size="sm" className="w-full bg-green-600 hover:bg-green-700">
+                        Sign Up
                       </Button>
                     </Link>
                   </div>
                 )}
-              </>
-            )}
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
-    </header>
+    </nav>
   );
 };
 
