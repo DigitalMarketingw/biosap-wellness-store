@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,10 +6,11 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useAdmin } from '@/contexts/AdminContext';
-import { Plus, Search, Edit, Trash2, Package, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Package, AlertTriangle, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import AddProductDialog from '@/components/admin/AddProductDialog';
 import EditProductDialog from '@/components/admin/EditProductDialog';
+import BulkUploadDialog from '@/components/admin/BulkUploadDialog';
 import ImageDebugger from '@/components/ImageDebugger';
 
 interface Product {
@@ -39,6 +41,7 @@ const ProductManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showBulkUploadDialog, setShowBulkUploadDialog] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showImageDebugger, setShowImageDebugger] = useState(false);
 
@@ -158,6 +161,14 @@ const ProductManagement = () => {
             className="text-orange-600 border-orange-300 hover:bg-orange-50"
           >
             {showImageDebugger ? 'Hide' : 'Show'} Image Debug
+          </Button>
+          <Button 
+            variant="outline"
+            onClick={() => setShowBulkUploadDialog(true)}
+            className="text-blue-600 border-blue-300 hover:bg-blue-50"
+          >
+            <Upload className="mr-2 h-4 w-4" />
+            Bulk Upload
           </Button>
           <Button 
             className="bg-green-600 hover:bg-green-700"
@@ -322,6 +333,12 @@ const ProductManagement = () => {
         onOpenChange={setShowEditDialog}
         product={selectedProduct}
         onProductUpdated={fetchProducts}
+      />
+
+      <BulkUploadDialog
+        open={showBulkUploadDialog}
+        onOpenChange={setShowBulkUploadDialog}
+        onUploadComplete={fetchProducts}
       />
     </div>
   );
