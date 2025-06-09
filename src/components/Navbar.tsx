@@ -25,7 +25,7 @@ const Navbar = () => {
               alt="BIOSAP Logo" 
               className="h-8 w-auto"
             />
-            <Badge variant="secondary" className="bg-green-100 text-green-700">Ayurvedic</Badge>
+            {/* <Badge variant="secondary" className="bg-green-100 text-green-700">Ayurvedic</Badge> */}
           </Link>
           
           <div className="hidden md:flex items-center space-x-6">
