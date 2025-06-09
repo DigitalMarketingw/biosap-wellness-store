@@ -13,6 +13,10 @@ interface Profile {
   company_id?: string | null;
   parent_user_id?: string | null;
   last_sign_in_at?: string | null;
+  phone_number?: string | null;
+  avatar_url?: string | null;
+  date_of_birth?: string | null;
+  updated_at?: string | null;
 }
 
 interface AuthContextType {
@@ -58,7 +62,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         created_at: data.created_at,
         company_id: data.company_id,
         parent_user_id: data.parent_user_id,
-        last_sign_in_at: data.last_sign_in_at
+        last_sign_in_at: data.last_sign_in_at,
+        phone_number: data.phone_number,
+        avatar_url: data.avatar_url,
+        date_of_birth: data.date_of_birth,
+        updated_at: data.updated_at
       };
       
       return profileData;
