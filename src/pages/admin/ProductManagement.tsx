@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +10,9 @@ import { useToast } from '@/hooks/use-toast';
 import AddProductDialog from '@/components/admin/AddProductDialog';
 import EditProductDialog from '@/components/admin/EditProductDialog';
 import BulkUploadDialog from '@/components/admin/BulkUploadDialog';
+import ProductDeletionDialog from '@/components/admin/ProductDeletionDialog';
 import ImageDebugger from '@/components/ImageDebugger';
+import { checkProductReferences, forceDeleteProduct, softDeleteProduct, ProductDeletionCheck } from '@/utils/productDeletion';
 
 interface Product {
   id: string;
@@ -42,7 +43,11 @@ const ProductManagement = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showBulkUploadDialog, setShowBulkUploadDialog] = useState(false);
+  const [showDeletionDialog, setShowDeletionDialog] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [deletionCheck, setDeletionCheck] = useState<ProductDeletionCheck | null>(null);
+  const [deletionLoading, setDeletionLoading] = useState(false);
   const [showImageDebugger, setShowImageDebugger] = useState(false);
 
   useEffect(() => {
@@ -107,24 +112,49 @@ const ProductManagement = () => {
     }
   };
 
-  const deleteProduct = async (productId: string) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
+  const initiateDeleteProduct = async (product: Product) => {
+    setProductToDelete(product);
+    setDeletionLoading(true);
+    
+    try {
+      const check = await checkProductReferences(product.id);
+      setDeletionCheck(check);
+      setShowDeletionDialog(true);
+    } catch (error) {
+      console.error('Error checking product references:', error);
+      toast({
+        title: "Error",
+        description: "Failed to check product references",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletionLoading(false);
+    }
+  };
 
+  const handleConfirmDelete = async () => {
+    if (!productToDelete) return;
+    
+    setDeletionLoading(true);
     try {
       const { error } = await supabase
         .from('products')
         .delete()
-        .eq('id', productId);
+        .eq('id', productToDelete.id);
 
       if (error) throw error;
 
       await fetchProducts();
-      await logAdminActivity('delete', 'products', productId);
+      await logAdminActivity('delete', 'products', productToDelete.id);
       
       toast({
         title: "Success",
         description: "Product deleted successfully",
       });
+      
+      setShowDeletionDialog(false);
+      setProductToDelete(null);
+      setDeletionCheck(null);
     } catch (error) {
       console.error('Error deleting product:', error);
       toast({
@@ -132,6 +162,66 @@ const ProductManagement = () => {
         description: "Failed to delete product",
         variant: "destructive",
       });
+    } finally {
+      setDeletionLoading(false);
+    }
+  };
+
+  const handleForceDelete = async () => {
+    if (!productToDelete) return;
+    
+    setDeletionLoading(true);
+    try {
+      await forceDeleteProduct(productToDelete.id);
+      await fetchProducts();
+      await logAdminActivity('delete', 'products', productToDelete.id, { type: 'force_delete' });
+      
+      toast({
+        title: "Success",
+        description: "Product force deleted successfully",
+      });
+      
+      setShowDeletionDialog(false);
+      setProductToDelete(null);
+      setDeletionCheck(null);
+    } catch (error) {
+      console.error('Error force deleting product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to force delete product",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletionLoading(false);
+    }
+  };
+
+  const handleSoftDelete = async () => {
+    if (!productToDelete) return;
+    
+    setDeletionLoading(true);
+    try {
+      await softDeleteProduct(productToDelete.id);
+      await fetchProducts();
+      await logAdminActivity('update', 'products', productToDelete.id, { type: 'soft_delete' });
+      
+      toast({
+        title: "Success",
+        description: "Product deactivated successfully",
+      });
+      
+      setShowDeletionDialog(false);
+      setProductToDelete(null);
+      setDeletionCheck(null);
+    } catch (error) {
+      console.error('Error deactivating product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to deactivate product",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletionLoading(false);
     }
   };
 
@@ -290,8 +380,9 @@ const ProductManagement = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => deleteProduct(product.id)}
+                      onClick={() => initiateDeleteProduct(product)}
                       className="text-red-600 hover:text-red-700"
+                      disabled={deletionLoading}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -339,6 +430,17 @@ const ProductManagement = () => {
         open={showBulkUploadDialog}
         onOpenChange={setShowBulkUploadDialog}
         onUploadComplete={fetchProducts}
+      />
+
+      <ProductDeletionDialog
+        open={showDeletionDialog}
+        onOpenChange={setShowDeletionDialog}
+        productName={productToDelete?.name || ''}
+        deletionCheck={deletionCheck}
+        onConfirmDelete={handleConfirmDelete}
+        onForceDelete={handleForceDelete}
+        onSoftDelete={handleSoftDelete}
+        loading={deletionLoading}
       />
     </div>
   );
