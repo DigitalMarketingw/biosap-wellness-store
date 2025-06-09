@@ -68,7 +68,7 @@ const Home = () => {
                   </Button>
                 </Link>
                 <Link to="/about">
-                  <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-green-600 px-8">
+                  <Button size="lg" className="border-white text-white hover:bg-white hover:text-green-600 px-8">
                     Learn More
                   </Button>
                 </Link>
