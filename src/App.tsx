@@ -20,6 +20,8 @@ import Categories from "./pages/Categories";
 import Cart from "./pages/Cart";
 import Wishlist from "./pages/Wishlist";
 import Checkout from "./pages/Checkout";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentFailed from "./pages/PaymentFailed";
 import NotFound from "./pages/NotFound";
 import SignIn from "./pages/auth/SignIn";
 import SignUp from "./pages/auth/SignUp";
@@ -64,6 +66,8 @@ const App = () => (
                   <Route path="/categories" element={<Layout><Categories /></Layout>} />
                   <Route path="/cart" element={<Layout><Cart /></Layout>} />
                   <Route path="/wishlist" element={<Layout><Wishlist /></Layout>} />
+                  <Route path="/payment-success" element={<Layout><PaymentSuccess /></Layout>} />
+                  <Route path="/payment-failed" element={<Layout><PaymentFailed /></Layout>} />
                   <Route path="/profile" element={
                     <ProtectedRoute>
                       <Layout><Profile /></Layout>

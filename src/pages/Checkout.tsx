@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/button';
@@ -9,12 +8,14 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { usePhonePePayment } from '@/hooks/usePhonePePayment';
 
 const Checkout = () => {
   const { items, getTotalPrice, clearCart } = useCart();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
+  const { initiatePayment, isProcessing: isPhonePeProcessing } = usePhonePePayment();
   
   const [shippingInfo, setShippingInfo] = useState({
     firstName: '',
@@ -33,59 +34,73 @@ const Checkout = () => {
     setShippingInfo(prev => ({ ...prev, [field]: value }));
   };
 
+  const createOrder = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    // Create order
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .insert({
+        user_id: user.id,
+        total_amount: getTotalPrice(),
+        status: 'pending',
+        shipping_address: shippingInfo,
+        payment_method: paymentMethod,
+        payment_status: paymentMethod === 'cod' ? 'pending' : 'pending'
+      })
+      .select()
+      .single();
+
+    if (orderError) throw orderError;
+
+    // Create order items
+    const orderItems = items.map(item => ({
+      order_id: order.id,
+      product_id: item.product_id,
+      quantity: item.quantity,
+      price: item.product.price
+    }));
+
+    const { error: itemsError } = await supabase
+      .from('order_items')
+      .insert(orderItems);
+
+    if (itemsError) throw itemsError;
+
+    return order;
+  };
+
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({
-          title: "Please sign in",
-          description: "You need to be signed in to place an order",
-          variant: "destructive"
-        });
+      const order = await createOrder();
+
+      if (paymentMethod === 'online') {
+        // Initiate PhonePe payment
+        const paymentResult = await initiatePayment(order.id);
+        
+        if (!paymentResult.success) {
+          throw new Error('Failed to initiate PhonePe payment');
+        }
+        
+        // The user will be redirected to PhonePe, so we don't need to do anything else here
         return;
+      } else {
+        // Cash on Delivery
+        await clearCart();
+
+        toast({
+          title: "Order placed successfully!",
+          description: `Your order #${order.id.slice(0, 8)} has been placed`,
+        });
+
+        navigate('/');
       }
-
-      // Create order
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          user_id: user.id,
-          total_amount: getTotalPrice(),
-          status: 'pending',
-          shipping_address: shippingInfo,
-          payment_method: paymentMethod
-        })
-        .select()
-        .single();
-
-      if (orderError) throw orderError;
-
-      // Create order items
-      const orderItems = items.map(item => ({
-        order_id: order.id,
-        product_id: item.product_id,
-        quantity: item.quantity,
-        price: item.product.price
-      }));
-
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
-
-      if (itemsError) throw itemsError;
-
-      // Clear cart
-      await clearCart();
-
-      toast({
-        title: "Order placed successfully!",
-        description: `Your order #${order.id.slice(0, 8)} has been placed`,
-      });
-
-      navigate('/');
     } catch (error) {
       console.error('Error placing order:', error);
       toast({
@@ -220,8 +235,8 @@ const Checkout = () => {
               <CardTitle className="text-green-800">Payment Method</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                <label className="flex items-center space-x-3 cursor-pointer">
+              <div className="space-y-4">
+                <label className="flex items-center space-x-3 cursor-pointer p-3 border border-gray-200 rounded-lg hover:border-green-300 transition-colors">
                   <input
                     type="radio"
                     name="payment"
@@ -230,9 +245,13 @@ const Checkout = () => {
                     onChange={(e) => setPaymentMethod(e.target.value)}
                     className="text-green-600"
                   />
-                  <span>Cash on Delivery</span>
+                  <div className="flex-1">
+                    <span className="font-medium">Cash on Delivery</span>
+                    <p className="text-sm text-gray-600">Pay when your order arrives</p>
+                  </div>
                 </label>
-                <label className="flex items-center space-x-3 cursor-pointer">
+                
+                <label className="flex items-center space-x-3 cursor-pointer p-3 border border-gray-200 rounded-lg hover:border-green-300 transition-colors">
                   <input
                     type="radio"
                     name="payment"
@@ -241,7 +260,15 @@ const Checkout = () => {
                     onChange={(e) => setPaymentMethod(e.target.value)}
                     className="text-green-600"
                   />
-                  <span>Online Payment</span>
+                  <div className="flex-1">
+                    <span className="font-medium">PhonePe Payment</span>
+                    <p className="text-sm text-gray-600">Pay securely with PhonePe, UPI, Cards & more</p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-6 bg-purple-600 rounded text-white text-xs flex items-center justify-center font-bold">
+                      Pe
+                    </div>
+                  </div>
                 </label>
               </div>
             </CardContent>
@@ -282,10 +309,13 @@ const Checkout = () => {
               
               <Button
                 type="submit"
-                disabled={isProcessing}
+                disabled={isProcessing || isPhonePeProcessing}
                 className="w-full bg-green-600 hover:bg-green-700 text-white"
               >
-                {isProcessing ? 'Processing...' : 'Place Order'}
+                {isProcessing || isPhonePeProcessing 
+                  ? (paymentMethod === 'online' ? 'Redirecting to PhonePe...' : 'Processing...') 
+                  : (paymentMethod === 'online' ? 'Pay with PhonePe' : 'Place Order')
+                }
               </Button>
             </CardContent>
           </Card>

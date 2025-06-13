@@ -349,12 +349,15 @@ export type Database = {
           delivered_at: string | null
           estimated_delivery: string | null
           id: string
+          payment_completed_at: string | null
           payment_method: string
+          payment_status: string | null
           shipped_at: string | null
           shipping_address: Json
           status: string
           total_amount: number
           tracking_number: string | null
+          transaction_reference: string | null
           updated_at: string
           user_id: string
         }
@@ -363,12 +366,15 @@ export type Database = {
           delivered_at?: string | null
           estimated_delivery?: string | null
           id?: string
+          payment_completed_at?: string | null
           payment_method: string
+          payment_status?: string | null
           shipped_at?: string | null
           shipping_address: Json
           status?: string
           total_amount: number
           tracking_number?: string | null
+          transaction_reference?: string | null
           updated_at?: string
           user_id: string
         }
@@ -377,16 +383,66 @@ export type Database = {
           delivered_at?: string | null
           estimated_delivery?: string | null
           id?: string
+          payment_completed_at?: string | null
           payment_method?: string
+          payment_status?: string | null
           shipped_at?: string | null
           shipping_address?: Json
           status?: string
           total_amount?: number
           tracking_number?: string | null
+          transaction_reference?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      payment_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          merchant_transaction_id: string
+          order_id: string
+          payment_method: string
+          phonepe_response: Json | null
+          phonepe_transaction_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          merchant_transaction_id: string
+          order_id: string
+          payment_method?: string
+          phonepe_response?: Json | null
+          phonepe_transaction_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          merchant_transaction_id?: string
+          order_id?: string
+          payment_method?: string
+          phonepe_response?: Json | null
+          phonepe_transaction_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       product_categories: {
         Row: {
