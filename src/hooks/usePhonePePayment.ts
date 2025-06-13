@@ -17,7 +17,7 @@ export const usePhonePePayment = () => {
         throw new Error('User not authenticated');
       }
 
-      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/phonepe-payment`, {
+      const response = await fetch(`https://heawuwxajoduoqumycxd.supabase.co/functions/v1/phonepe-payment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -59,7 +59,7 @@ export const usePhonePePayment = () => {
         throw new Error('User not authenticated');
       }
 
-      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/phonepe-payment`, {
+      const response = await fetch(`https://heawuwxajoduoqumycxd.supabase.co/functions/v1/phonepe-payment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
