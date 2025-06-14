@@ -54,7 +54,7 @@ serve(async (req) => {
       }
     )
   } catch (error) {
-    console.error('PhonePe payment error:', error)
+    console.error('PhonePe PG payment error:', error)
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
       {
@@ -87,13 +87,13 @@ async function initiatePayment(supabaseClient: any, orderId: string, userId: str
   // Generate merchant transaction ID
   const merchantTransactionId = `TXN${Date.now()}${Math.random().toString(36).substr(2, 9)}`
   
-  // PhonePe payment request
+  // PhonePe PG payment request - updated structure for PG
   const paymentRequest = {
     merchantId: Deno.env.get('PHONEPE_MERCHANT_ID'),
     merchantTransactionId,
     merchantUserId: userId,
     amount: Math.round(order.total_amount * 100), // Convert to paise
-    redirectUrl: `${Deno.env.get('SUPABASE_URL')}/functions/v1/phonepe-payment/callback`,
+    redirectUrl: `${Deno.env.get('SUPABASE_URL')}/functions/v1/phonepe-payment/callback?merchantTransactionId=${merchantTransactionId}`,
     redirectMode: 'POST',
     callbackUrl: `${Deno.env.get('SUPABASE_URL')}/functions/v1/phonepe-payment/callback`,
     mobileNumber: order.shipping_address?.phone || '',
@@ -105,7 +105,7 @@ async function initiatePayment(supabaseClient: any, orderId: string, userId: str
   // Create base64 encoded payload
   const base64Payload = btoa(JSON.stringify(paymentRequest))
   
-  // Create checksum
+  // Create checksum for PhonePe PG
   const saltKey = Deno.env.get('PHONEPE_SALT_KEY')
   const saltIndex = Deno.env.get('PHONEPE_SALT_INDEX') || '1'
   const stringToHash = base64Payload + '/pg/v1/pay' + saltKey
@@ -137,10 +137,14 @@ async function initiatePayment(supabaseClient: any, orderId: string, userId: str
     )
   }
 
-  // Make request to PhonePe
+  // PhonePe PG API endpoint - using PG specific endpoint
   const phonePeUrl = Deno.env.get('PHONEPE_ENV') === 'production' 
     ? 'https://api.phonepe.com/apis/hermes/pg/v1/pay'
     : 'https://api-preprod.phonepe.com/apis/hermes/pg/v1/pay'
+
+  console.log('Making request to PhonePe PG:', phonePeUrl)
+  console.log('Payload:', base64Payload)
+  console.log('Checksum:', checksum)
 
   const response = await fetch(phonePeUrl, {
     method: 'POST',
@@ -154,6 +158,7 @@ async function initiatePayment(supabaseClient: any, orderId: string, userId: str
   })
 
   const result = await response.json()
+  console.log('PhonePe PG Response:', result)
 
   if (result.success && result.data?.instrumentResponse?.redirectInfo?.url) {
     return new Response(
@@ -167,8 +172,9 @@ async function initiatePayment(supabaseClient: any, orderId: string, userId: str
       }
     )
   } else {
+    console.error('PhonePe PG Error:', result)
     return new Response(
-      JSON.stringify({ error: 'Failed to initiate payment', details: result }),
+      JSON.stringify({ error: 'Failed to initiate payment with PhonePe PG', details: result }),
       {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -190,9 +196,12 @@ async function verifyPayment(supabaseClient: any, merchantTransactionId: string)
   const hashArray = new Uint8Array(hashBuffer)
   const checksum = Array.from(hashArray).map(b => b.toString(16).padStart(2, '0')).join('') + '###' + saltIndex
 
+  // PhonePe PG status check endpoint
   const phonePeUrl = Deno.env.get('PHONEPE_ENV') === 'production' 
     ? `https://api.phonepe.com/apis/hermes/pg/v1/status/${merchantId}/${merchantTransactionId}`
     : `https://api-preprod.phonepe.com/apis/hermes/pg/v1/status/${merchantId}/${merchantTransactionId}`
+
+  console.log('Verifying payment with PhonePe PG:', phonePeUrl)
 
   const response = await fetch(phonePeUrl, {
     method: 'GET',
@@ -204,6 +213,7 @@ async function verifyPayment(supabaseClient: any, merchantTransactionId: string)
   })
 
   const result = await response.json()
+  console.log('PhonePe PG Verification Response:', result)
 
   // Update payment transaction
   const { error: updateError } = await supabaseClient
@@ -221,18 +231,27 @@ async function verifyPayment(supabaseClient: any, merchantTransactionId: string)
 
   // Update order if payment successful
   if (result.success && result.data?.state === 'COMPLETED') {
-    const { error: orderUpdateError } = await supabaseClient
-      .from('orders')
-      .update({
-        payment_status: 'completed',
-        status: 'processing',
-        transaction_reference: result.data.transactionId,
-        payment_completed_at: new Date().toISOString()
-      })
-      .eq('id', result.data?.merchantTransactionId)
+    // Get the order_id from payment_transactions table
+    const { data: transaction } = await supabaseClient
+      .from('payment_transactions')
+      .select('order_id')
+      .eq('merchant_transaction_id', merchantTransactionId)
+      .single()
 
-    if (orderUpdateError) {
-      console.error('Error updating order:', orderUpdateError)
+    if (transaction) {
+      const { error: orderUpdateError } = await supabaseClient
+        .from('orders')
+        .update({
+          payment_status: 'completed',
+          status: 'processing',
+          transaction_reference: result.data.transactionId,
+          payment_completed_at: new Date().toISOString()
+        })
+        .eq('id', transaction.order_id)
+
+      if (orderUpdateError) {
+        console.error('Error updating order:', orderUpdateError)
+      }
     }
   }
 
