@@ -30,9 +30,10 @@ export const usePhonePePayment = () => {
       });
 
       const result = await response.json();
+      console.log('Payment initiation result:', result);
 
       if (result.success && result.paymentUrl) {
-        // Redirect to PhonePe payment page
+        // Redirect to PhonePe PG payment page
         window.location.href = result.paymentUrl;
         return { success: true, merchantTransactionId: result.merchantTransactionId };
       } else {
@@ -72,6 +73,7 @@ export const usePhonePePayment = () => {
       });
 
       const result = await response.json();
+      console.log('Payment verification result:', result);
       return result;
     } catch (error) {
       console.error('Payment verification error:', error);

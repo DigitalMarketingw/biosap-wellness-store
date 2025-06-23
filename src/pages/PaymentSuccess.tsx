@@ -21,18 +21,24 @@ const PaymentSuccess = () => {
   useEffect(() => {
     const verifyAndUpdatePayment = async () => {
       if (!merchantTransactionId) {
+        console.log('No merchant transaction ID found, redirecting to failed page');
         navigate('/payment-failed');
         return;
       }
 
       try {
+        console.log('Verifying payment for transaction:', merchantTransactionId);
         const result = await verifyPayment(merchantTransactionId);
+        
+        console.log('Verification result:', result);
         
         if (result.success && result.data?.state === 'COMPLETED') {
           setPaymentVerified(true);
           setOrderDetails(result.data);
           await clearCart();
+          console.log('Payment verified successfully, cart cleared');
         } else {
+          console.log('Payment verification failed or not completed, redirecting to failed page');
           navigate('/payment-failed');
         }
       } catch (error) {
@@ -52,7 +58,7 @@ const PaymentSuccess = () => {
         <div className="max-w-md mx-auto text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
           <h2 className="text-xl font-semibold text-gray-800">Verifying Payment...</h2>
-          <p className="text-gray-600">Please wait while we confirm your payment</p>
+          <p className="text-gray-600">Please wait while we confirm your payment with PhonePe</p>
         </div>
       </div>
     );
@@ -70,7 +76,7 @@ const PaymentSuccess = () => {
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <p className="text-gray-600">
-              Your payment has been processed successfully and your order has been confirmed.
+              Your payment has been processed successfully through PhonePe and your order has been confirmed.
             </p>
             
             {orderDetails && (
@@ -79,7 +85,7 @@ const PaymentSuccess = () => {
                 <div className="space-y-1 text-sm text-gray-600">
                   <div className="flex justify-between">
                     <span>Transaction ID:</span>
-                    <span className="font-mono">{orderDetails.transactionId}</span>
+                    <span className="font-mono text-xs">{orderDetails.transactionId}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Amount:</span>
@@ -87,7 +93,11 @@ const PaymentSuccess = () => {
                   </div>
                   <div className="flex justify-between">
                     <span>Payment Method:</span>
-                    <span>{orderDetails.paymentInstrument?.type || 'PhonePe'}</span>
+                    <span>PhonePe</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Status:</span>
+                    <span className="text-green-600 font-semibold">{orderDetails.state}</span>
                   </div>
                 </div>
               </div>

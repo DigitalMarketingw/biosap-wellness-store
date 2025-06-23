@@ -12,6 +12,9 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  const url = new URL(req.url)
+  const pathname = url.pathname
+
   try {
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -23,6 +26,11 @@ serve(async (req) => {
         },
       }
     )
+
+    // Handle callback from PhonePe PG
+    if (pathname.includes('/callback')) {
+      return await handleCallback(req, supabaseClient)
+    }
 
     const authHeader = req.headers.get('Authorization')!
     const token = authHeader.replace('Bearer ', '')
@@ -65,6 +73,102 @@ serve(async (req) => {
   }
 })
 
+async function handleCallback(req: Request, supabaseClient: any) {
+  const url = new URL(req.url)
+  console.log('PhonePe PG Callback received:', req.method, url.pathname, url.search)
+
+  try {
+    if (req.method === 'POST') {
+      // Handle POST callback from PhonePe PG
+      const formData = await req.formData()
+      const response = formData.get('response')
+      
+      console.log('PhonePe PG POST Callback Data:', response)
+
+      if (response) {
+        // Decode the base64 response
+        const decodedResponse = JSON.parse(atob(response.toString()))
+        console.log('Decoded PhonePe Response:', decodedResponse)
+
+        const merchantTransactionId = decodedResponse.data?.merchantTransactionId
+        const paymentStatus = decodedResponse.data?.state
+
+        if (merchantTransactionId) {
+          // Update payment transaction
+          await supabaseClient
+            .from('payment_transactions')
+            .update({
+              status: paymentStatus === 'COMPLETED' ? 'completed' : 'failed',
+              phonepe_response: decodedResponse,
+              phonepe_transaction_id: decodedResponse.data?.transactionId
+            })
+            .eq('merchant_transaction_id', merchantTransactionId)
+
+          // Update order if payment successful
+          if (paymentStatus === 'COMPLETED') {
+            const { data: transaction } = await supabaseClient
+              .from('payment_transactions')
+              .select('order_id')
+              .eq('merchant_transaction_id', merchantTransactionId)
+              .single()
+
+            if (transaction) {
+              await supabaseClient
+                .from('orders')
+                .update({
+                  payment_status: 'completed',
+                  status: 'processing',
+                  transaction_reference: decodedResponse.data?.transactionId,
+                  payment_completed_at: new Date().toISOString()
+                })
+                .eq('id', transaction.order_id)
+            }
+          }
+
+          // Redirect to appropriate page
+          const redirectUrl = paymentStatus === 'COMPLETED' 
+            ? `https://heawuwxajoduoqumycxd.supabase.co/payment-success?merchantTransactionId=${merchantTransactionId}`
+            : `https://heawuwxajoduoqumycxd.supabase.co/payment-failed?merchantTransactionId=${merchantTransactionId}`
+
+          return new Response(null, {
+            status: 302,
+            headers: {
+              'Location': redirectUrl,
+              ...corsHeaders
+            }
+          })
+        }
+      }
+    }
+
+    // Handle GET callback (fallback)
+    const merchantTransactionId = url.searchParams.get('merchantTransactionId')
+    if (merchantTransactionId) {
+      const redirectUrl = `https://heawuwxajoduoqumycxd.supabase.co/payment-success?merchantTransactionId=${merchantTransactionId}`
+      return new Response(null, {
+        status: 302,
+        headers: {
+          'Location': redirectUrl,
+          ...corsHeaders
+        }
+      })
+    }
+
+    return new Response('Callback processed', {
+      headers: { ...corsHeaders, 'Content-Type': 'text/plain' }
+    })
+  } catch (error) {
+    console.error('Callback handling error:', error)
+    return new Response(null, {
+      status: 302,
+      headers: {
+        'Location': `https://heawuwxajoduoqumycxd.supabase.co/payment-failed`,
+        ...corsHeaders
+      }
+    })
+  }
+}
+
 async function initiatePayment(supabaseClient: any, orderId: string, userId: string) {
   // Get order details
   const { data: order, error: orderError } = await supabaseClient
@@ -87,13 +191,13 @@ async function initiatePayment(supabaseClient: any, orderId: string, userId: str
   // Generate merchant transaction ID
   const merchantTransactionId = `TXN${Date.now()}${Math.random().toString(36).substr(2, 9)}`
   
-  // PhonePe PG payment request - updated structure for PG
+  // PhonePe PG payment request - correct structure according to documentation
   const paymentRequest = {
     merchantId: Deno.env.get('PHONEPE_MERCHANT_ID'),
     merchantTransactionId,
     merchantUserId: userId,
-    amount: Math.round(order.total_amount * 100), // Convert to paise
-    redirectUrl: `${Deno.env.get('SUPABASE_URL')}/functions/v1/phonepe-payment/callback?merchantTransactionId=${merchantTransactionId}`,
+    amount: Math.round(order.total_amount * 100), // Amount in paise
+    redirectUrl: `https://heawuwxajoduoqumycxd.supabase.co/payment-success?merchantTransactionId=${merchantTransactionId}`,
     redirectMode: 'POST',
     callbackUrl: `${Deno.env.get('SUPABASE_URL')}/functions/v1/phonepe-payment/callback`,
     mobileNumber: order.shipping_address?.phone || '',
@@ -101,6 +205,8 @@ async function initiatePayment(supabaseClient: any, orderId: string, userId: str
       type: 'PAY_PAGE'
     }
   }
+
+  console.log('Payment Request:', paymentRequest)
 
   // Create base64 encoded payload
   const base64Payload = btoa(JSON.stringify(paymentRequest))
@@ -137,7 +243,7 @@ async function initiatePayment(supabaseClient: any, orderId: string, userId: str
     )
   }
 
-  // PhonePe PG API endpoint - using PG specific endpoint
+  // PhonePe PG API endpoint
   const phonePeUrl = Deno.env.get('PHONEPE_ENV') === 'production' 
     ? 'https://api.phonepe.com/apis/hermes/pg/v1/pay'
     : 'https://api-preprod.phonepe.com/apis/hermes/pg/v1/pay'

@@ -66,8 +66,12 @@ const App = () => (
                   <Route path="/categories" element={<Layout><Categories /></Layout>} />
                   <Route path="/cart" element={<Layout><Cart /></Layout>} />
                   <Route path="/wishlist" element={<Layout><Wishlist /></Layout>} />
+                  
+                  {/* Payment Routes - Updated for PhonePe PG */}
                   <Route path="/payment-success" element={<Layout><PaymentSuccess /></Layout>} />
                   <Route path="/payment-failed" element={<Layout><PaymentFailed /></Layout>} />
+                  
+                  {/* Protected Routes */}
                   <Route path="/profile" element={
                     <ProtectedRoute>
                       <Layout><Profile /></Layout>

@@ -1,12 +1,19 @@
 
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { XCircle, RefreshCw } from 'lucide-react';
 
 const PaymentFailed = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [transactionId, setTransactionId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const merchantTransactionId = searchParams.get('merchantTransactionId');
+    setTransactionId(merchantTransactionId);
+  }, [searchParams]);
 
   return (
     <div className="container mx-auto px-4 py-16">
@@ -20,16 +27,26 @@ const PaymentFailed = () => {
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <p className="text-gray-600">
-              Sorry, there was an issue processing your payment. Your order has not been placed.
+              Sorry, there was an issue processing your payment through PhonePe. Your order has not been placed.
             </p>
             
+            {transactionId && (
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <p className="text-sm text-gray-600">
+                  Transaction ID: <span className="font-mono">{transactionId}</span>
+                </p>
+              </div>
+            )}
+            
             <div className="bg-red-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-red-800 mb-2">What happened?</h3>
+              <h3 className="font-semibold text-red-800 mb-2">What might have happened?</h3>
               <ul className="text-sm text-red-700 text-left space-y-1">
-                <li>• Payment was cancelled or declined</li>
+                <li>• Payment was cancelled by you</li>
+                <li>• Insufficient balance in your account</li>
                 <li>• Network connectivity issues</li>
                 <li>• Bank server temporarily unavailable</li>
-                <li>• Insufficient funds or card limit exceeded</li>
+                <li>• Card limit exceeded or expired</li>
+                <li>• PhonePe server issues</li>
               </ul>
             </div>
             
@@ -39,7 +56,7 @@ const PaymentFailed = () => {
                 className="w-full bg-green-600 hover:bg-green-700"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
-                Try Again
+                Try Payment Again
               </Button>
               <Button 
                 onClick={() => navigate('/cart')} 
