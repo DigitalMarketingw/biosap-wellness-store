@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { XCircle, RefreshCw } from 'lucide-react';
+import { XCircle, RefreshCw, Home } from 'lucide-react';
 
 const PaymentFailed = () => {
   const navigate = useNavigate();
@@ -13,6 +13,7 @@ const PaymentFailed = () => {
   useEffect(() => {
     const merchantTransactionId = searchParams.get('merchantTransactionId');
     setTransactionId(merchantTransactionId);
+    console.log('PaymentFailed - Transaction ID:', merchantTransactionId);
   }, [searchParams]);
 
   return (
@@ -33,7 +34,7 @@ const PaymentFailed = () => {
             {transactionId && (
               <div className="bg-gray-50 p-3 rounded-lg">
                 <p className="text-sm text-gray-600">
-                  Transaction ID: <span className="font-mono">{transactionId}</span>
+                  Transaction ID: <span className="font-mono text-xs">{transactionId}</span>
                 </p>
               </div>
             )}
@@ -47,6 +48,7 @@ const PaymentFailed = () => {
                 <li>• Bank server temporarily unavailable</li>
                 <li>• Card limit exceeded or expired</li>
                 <li>• PhonePe server issues</li>
+                <li>• Payment session expired</li>
               </ul>
             </div>
             
@@ -70,6 +72,7 @@ const PaymentFailed = () => {
                 variant="ghost" 
                 className="w-full"
               >
+                <Home className="w-4 h-4 mr-2" />
                 Continue Shopping
               </Button>
             </div>

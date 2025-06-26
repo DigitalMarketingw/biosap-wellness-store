@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/button';
@@ -29,9 +30,33 @@ const Checkout = () => {
   });
 
   const [paymentMethod, setPaymentMethod] = useState('cod');
+  const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
 
   const handleInputChange = (field: string, value: string) => {
     setShippingInfo(prev => ({ ...prev, [field]: value }));
+    // Clear validation error when user starts typing
+    if (validationErrors[field]) {
+      setValidationErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const validateForm = () => {
+    const errors: {[key: string]: string} = {};
+    
+    if (!shippingInfo.firstName.trim()) errors.firstName = 'First name is required';
+    if (!shippingInfo.lastName.trim()) errors.lastName = 'Last name is required';
+    if (!shippingInfo.email.trim()) errors.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(shippingInfo.email)) errors.email = 'Email is invalid';
+    if (!shippingInfo.phone.trim()) errors.phone = 'Phone is required';
+    else if (!/^\d{10}$/.test(shippingInfo.phone.replace(/\D/g, ''))) errors.phone = 'Phone must be 10 digits';
+    if (!shippingInfo.address.trim()) errors.address = 'Address is required';
+    if (!shippingInfo.city.trim()) errors.city = 'City is required';
+    if (!shippingInfo.state.trim()) errors.state = 'State is required';
+    if (!shippingInfo.pincode.trim()) errors.pincode = 'Pincode is required';
+    else if (!/^\d{6}$/.test(shippingInfo.pincode)) errors.pincode = 'Pincode must be 6 digits';
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const createOrder = async () => {
@@ -44,13 +69,21 @@ const Checkout = () => {
     }
 
     console.log('Checkout - Creating order for user:', user.id);
-    console.log('Checkout - Order data:', {
-      user_id: user.id,
-      total_amount: getTotalPrice(),
-      shipping_address: shippingInfo,
-      payment_method: paymentMethod,
-      items: items
-    });
+    
+    // Clean and format shipping info
+    const cleanShippingInfo = {
+      ...shippingInfo,
+      phone: shippingInfo.phone.replace(/\D/g, ''), // Remove non-digits
+      email: shippingInfo.email.toLowerCase().trim(),
+      firstName: shippingInfo.firstName.trim(),
+      lastName: shippingInfo.lastName.trim(),
+      address: shippingInfo.address.trim(),
+      city: shippingInfo.city.trim(),
+      state: shippingInfo.state.trim(),
+      pincode: shippingInfo.pincode.trim()
+    };
+
+    console.log('Checkout - Clean shipping info:', cleanShippingInfo);
 
     // Create order
     const { data: order, error: orderError } = await supabase
@@ -59,16 +92,16 @@ const Checkout = () => {
         user_id: user.id,
         total_amount: getTotalPrice(),
         status: 'pending',
-        shipping_address: shippingInfo,
+        shipping_address: cleanShippingInfo,
         payment_method: paymentMethod,
-        payment_status: paymentMethod === 'cod' ? 'pending' : 'pending'
+        payment_status: 'pending'
       })
       .select()
       .single();
 
     if (orderError) {
       console.error('Checkout - Order creation error:', orderError);
-      throw orderError;
+      throw new Error(`Failed to create order: ${orderError.message}`);
     }
 
     console.log('Checkout - Order created successfully:', order);
@@ -89,7 +122,9 @@ const Checkout = () => {
 
     if (itemsError) {
       console.error('Checkout - Order items creation error:', itemsError);
-      throw itemsError;
+      // Try to clean up the order if items creation fails
+      await supabase.from('orders').delete().eq('id', order.id);
+      throw new Error(`Failed to create order items: ${itemsError.message}`);
     }
 
     console.log('Checkout - Order items created successfully');
@@ -99,31 +134,35 @@ const Checkout = () => {
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Checkout - Form submitted, payment method:', paymentMethod);
+    
+    // Validate form first
+    if (!validateForm()) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields correctly",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsProcessing(true);
 
     try {
-      // Validate form data
-      if (!shippingInfo.firstName || !shippingInfo.lastName || !shippingInfo.email || 
-          !shippingInfo.phone || !shippingInfo.address || !shippingInfo.city || 
-          !shippingInfo.state || !shippingInfo.pincode) {
-        throw new Error('Please fill in all required shipping information');
-      }
-
       const order = await createOrder();
       console.log('Checkout - Order created, ID:', order.id);
 
       if (paymentMethod === 'online') {
         console.log('Checkout - Initiating PhonePe payment for order:', order.id);
         
-        // Add a small delay to ensure order is properly committed
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Add a delay to ensure order is fully committed to database
+        await new Promise(resolve => setTimeout(resolve, 2000));
         
         const paymentResult = await initiatePayment(order.id);
         console.log('Checkout - Payment initiation result:', paymentResult);
         
         if (!paymentResult.success) {
           console.error('Checkout - Payment initiation failed');
-          throw new Error('Failed to initiate PhonePe payment');
+          throw new Error('Failed to initiate PhonePe payment. Please try again.');
         }
         
         console.log('Checkout - Payment initiated successfully, redirecting...');
@@ -144,16 +183,9 @@ const Checkout = () => {
     } catch (error) {
       console.error('Checkout - Error placing order:', error);
       
-      // More detailed error handling
       let errorMessage = "Failed to place order. Please try again.";
       if (error instanceof Error) {
         errorMessage = error.message;
-      } else if (typeof error === 'object' && error !== null) {
-        if ('message' in error) {
-          errorMessage = String((error as any).message);
-        } else if ('details' in error) {
-          errorMessage = String((error as any).details);
-        }
       }
       
       toast({
@@ -199,8 +231,11 @@ const Checkout = () => {
                     value={shippingInfo.firstName}
                     onChange={(e) => handleInputChange('firstName', e.target.value)}
                     required
-                    className="border-green-200"
+                    className={`border-green-200 ${validationErrors.firstName ? 'border-red-500' : ''}`}
                   />
+                  {validationErrors.firstName && (
+                    <p className="text-red-500 text-sm mt-1">{validationErrors.firstName}</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="lastName">Last Name *</Label>
@@ -209,8 +244,11 @@ const Checkout = () => {
                     value={shippingInfo.lastName}
                     onChange={(e) => handleInputChange('lastName', e.target.value)}
                     required
-                    className="border-green-200"
+                    className={`border-green-200 ${validationErrors.lastName ? 'border-red-500' : ''}`}
                   />
+                  {validationErrors.lastName && (
+                    <p className="text-red-500 text-sm mt-1">{validationErrors.lastName}</p>
+                  )}
                 </div>
               </div>
               
@@ -222,8 +260,11 @@ const Checkout = () => {
                   value={shippingInfo.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   required
-                  className="border-green-200"
+                  className={`border-green-200 ${validationErrors.email ? 'border-red-500' : ''}`}
                 />
+                {validationErrors.email && (
+                  <p className="text-red-500 text-sm mt-1">{validationErrors.email}</p>
+                )}
               </div>
               
               <div>
@@ -233,8 +274,12 @@ const Checkout = () => {
                   value={shippingInfo.phone}
                   onChange={(e) => handleInputChange('phone', e.target.value)}
                   required
-                  className="border-green-200"
+                  placeholder="10-digit mobile number"
+                  className={`border-green-200 ${validationErrors.phone ? 'border-red-500' : ''}`}
                 />
+                {validationErrors.phone && (
+                  <p className="text-red-500 text-sm mt-1">{validationErrors.phone}</p>
+                )}
               </div>
               
               <div>
@@ -244,8 +289,11 @@ const Checkout = () => {
                   value={shippingInfo.address}
                   onChange={(e) => handleInputChange('address', e.target.value)}
                   required
-                  className="border-green-200"
+                  className={`border-green-200 ${validationErrors.address ? 'border-red-500' : ''}`}
                 />
+                {validationErrors.address && (
+                  <p className="text-red-500 text-sm mt-1">{validationErrors.address}</p>
+                )}
               </div>
               
               <div className="grid grid-cols-3 gap-4">
@@ -256,8 +304,11 @@ const Checkout = () => {
                     value={shippingInfo.city}
                     onChange={(e) => handleInputChange('city', e.target.value)}
                     required
-                    className="border-green-200"
+                    className={`border-green-200 ${validationErrors.city ? 'border-red-500' : ''}`}
                   />
+                  {validationErrors.city && (
+                    <p className="text-red-500 text-sm mt-1">{validationErrors.city}</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="state">State *</Label>
@@ -266,8 +317,11 @@ const Checkout = () => {
                     value={shippingInfo.state}
                     onChange={(e) => handleInputChange('state', e.target.value)}
                     required
-                    className="border-green-200"
+                    className={`border-green-200 ${validationErrors.state ? 'border-red-500' : ''}`}
                   />
+                  {validationErrors.state && (
+                    <p className="text-red-500 text-sm mt-1">{validationErrors.state}</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="pincode">Pincode *</Label>
@@ -276,8 +330,12 @@ const Checkout = () => {
                     value={shippingInfo.pincode}
                     onChange={(e) => handleInputChange('pincode', e.target.value)}
                     required
-                    className="border-green-200"
+                    placeholder="6-digit pincode"
+                    className={`border-green-200 ${validationErrors.pincode ? 'border-red-500' : ''}`}
                   />
+                  {validationErrors.pincode && (
+                    <p className="text-red-500 text-sm mt-1">{validationErrors.pincode}</p>
+                  )}
                 </div>
               </div>
             </CardContent>

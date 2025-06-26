@@ -21,29 +21,29 @@ const PaymentSuccess = () => {
   useEffect(() => {
     const verifyAndUpdatePayment = async () => {
       if (!merchantTransactionId) {
-        console.log('No merchant transaction ID found, redirecting to failed page');
+        console.log('PaymentSuccess - No merchant transaction ID found, redirecting to failed page');
         navigate('/payment-failed');
         return;
       }
 
       try {
-        console.log('Verifying payment for transaction:', merchantTransactionId);
+        console.log('PaymentSuccess - Verifying payment for transaction:', merchantTransactionId);
         const result = await verifyPayment(merchantTransactionId);
         
-        console.log('Verification result:', result);
+        console.log('PaymentSuccess - Verification result:', result);
         
         if (result.success && result.data?.state === 'COMPLETED') {
           setPaymentVerified(true);
           setOrderDetails(result.data);
           await clearCart();
-          console.log('Payment verified successfully, cart cleared');
+          console.log('PaymentSuccess - Payment verified successfully, cart cleared');
         } else {
-          console.log('Payment verification failed or not completed, redirecting to failed page');
-          navigate('/payment-failed');
+          console.log('PaymentSuccess - Payment verification failed or not completed:', result);
+          navigate('/payment-failed?merchantTransactionId=' + merchantTransactionId);
         }
       } catch (error) {
-        console.error('Payment verification failed:', error);
-        navigate('/payment-failed');
+        console.error('PaymentSuccess - Payment verification failed:', error);
+        navigate('/payment-failed?merchantTransactionId=' + merchantTransactionId);
       } finally {
         setIsVerifying(false);
       }
@@ -87,10 +87,12 @@ const PaymentSuccess = () => {
                     <span>Transaction ID:</span>
                     <span className="font-mono text-xs">{orderDetails.transactionId}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Amount:</span>
-                    <span>₹{(orderDetails.amount / 100).toFixed(2)}</span>
-                  </div>
+                  {orderDetails.amount && (
+                    <div className="flex justify-between">
+                      <span>Amount:</span>
+                      <span>₹{(orderDetails.amount / 100).toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span>Payment Method:</span>
                     <span>PhonePe</span>
@@ -99,6 +101,12 @@ const PaymentSuccess = () => {
                     <span>Status:</span>
                     <span className="text-green-600 font-semibold">{orderDetails.state}</span>
                   </div>
+                  {merchantTransactionId && (
+                    <div className="flex justify-between">
+                      <span>Merchant TXN ID:</span>
+                      <span className="font-mono text-xs">{merchantTransactionId}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
