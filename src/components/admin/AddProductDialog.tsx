@@ -83,6 +83,7 @@ const AddProductDialog = ({ open, onOpenChange, onProductAdded }: AddProductDial
 
   useEffect(() => {
     if (open) {
+      console.log('AddProductDialog - Dialog opened, fetching data...');
       fetchCategories();
       fetchSuppliers();
     }
@@ -90,30 +91,52 @@ const AddProductDialog = ({ open, onOpenChange, onProductAdded }: AddProductDial
 
   const fetchCategories = async () => {
     try {
+      console.log('AddProductDialog - Fetching categories...');
       const { data, error } = await supabase
         .from('categories')
         .select('id, name')
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('AddProductDialog - Error fetching categories:', error);
+        throw error;
+      }
+      
+      console.log('AddProductDialog - Categories fetched:', data);
       setCategories(data || []);
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      console.error('AddProductDialog - Error in fetchCategories:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch categories",
+        variant: "destructive",
+      });
     }
   };
 
   const fetchSuppliers = async () => {
     try {
+      console.log('AddProductDialog - Fetching suppliers...');
       const { data, error } = await supabase
         .from('suppliers')
         .select('id, name')
         .eq('is_active', true)
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('AddProductDialog - Error fetching suppliers:', error);
+        throw error;
+      }
+      
+      console.log('AddProductDialog - Suppliers fetched:', data);
       setSuppliers(data || []);
     } catch (error) {
-      console.error('Error fetching suppliers:', error);
+      console.error('AddProductDialog - Error in fetchSuppliers:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch suppliers",
+        variant: "destructive",
+      });
     }
   };
 
@@ -129,7 +152,9 @@ const AddProductDialog = ({ open, onOpenChange, onProductAdded }: AddProductDial
   };
 
   const onSubmit = async (data: ProductFormData) => {
+    console.log('AddProductDialog - Form submission started with data:', data);
     setLoading(true);
+    
     try {
       const productData = {
         name: data.name,
@@ -149,13 +174,20 @@ const AddProductDialog = ({ open, onOpenChange, onProductAdded }: AddProductDial
         is_active: data.is_active,
       };
 
+      console.log('AddProductDialog - Prepared product data:', productData);
+
       const { data: product, error } = await supabase
         .from('products')
         .insert(productData)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('AddProductDialog - Supabase insert error:', error);
+        throw error;
+      }
+
+      console.log('AddProductDialog - Product created successfully:', product);
 
       await logAdminActivity('create', 'products', product.id, { name: data.name });
 
@@ -170,10 +202,19 @@ const AddProductDialog = ({ open, onOpenChange, onProductAdded }: AddProductDial
       onProductAdded();
       onOpenChange(false);
     } catch (error) {
-      console.error('Error creating product:', error);
+      console.error('AddProductDialog - Error creating product:', error);
+      
+      // More detailed error message
+      let errorMessage = "Failed to create product";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null && 'message' in error) {
+        errorMessage = String((error as any).message);
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to create product",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -465,6 +506,7 @@ const AddProductDialog = ({ open, onOpenChange, onProductAdded }: AddProductDial
                 type="button" 
                 variant="outline" 
                 onClick={() => onOpenChange(false)}
+                disabled={loading}
               >
                 Cancel
               </Button>
