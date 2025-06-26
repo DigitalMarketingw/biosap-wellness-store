@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -47,6 +46,7 @@ serve(async (req) => {
     }
 
     const { action, orderId, transactionId } = await req.json()
+    console.log('PhonePe PG Request:', { action, orderId, transactionId, userId: user.id })
 
     if (action === 'initiate') {
       return await initiatePayment(supabaseClient, orderId, user.id)
@@ -64,7 +64,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('PhonePe PG payment error:', error)
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: 'Internal server error', details: error.message }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -170,17 +170,50 @@ async function handleCallback(req: Request, supabaseClient: any) {
 }
 
 async function initiatePayment(supabaseClient: any, orderId: string, userId: string) {
-  // Get order details
-  const { data: order, error: orderError } = await supabaseClient
-    .from('orders')
-    .select('*')
-    .eq('id', orderId)
-    .eq('user_id', userId)
-    .single()
+  console.log('PhonePe PG - Initiating payment for order:', orderId, 'user:', userId)
+  
+  // Add retry logic for order fetching
+  let order = null;
+  let attempts = 0;
+  const maxAttempts = 3;
+  
+  while (!order && attempts < maxAttempts) {
+    attempts++;
+    console.log(`PhonePe PG - Fetching order attempt ${attempts}/${maxAttempts}`)
+    
+    const { data, error } = await supabaseClient
+      .from('orders')
+      .select('*')
+      .eq('id', orderId)
+      .eq('user_id', userId)
+      .single()
 
-  if (orderError || !order) {
+    if (error) {
+      console.error(`PhonePe PG - Order fetch error (attempt ${attempts}):`, error)
+      if (attempts === maxAttempts) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Order not found',
+            details: `Order ${orderId} not found for user ${userId}`,
+            supabaseError: error
+          }),
+          {
+            status: 404,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        )
+      }
+      // Wait 1 second before retry
+      await new Promise(resolve => setTimeout(resolve, 1000))
+    } else {
+      order = data
+      console.log('PhonePe PG - Order found:', order)
+    }
+  }
+
+  if (!order) {
     return new Response(
-      JSON.stringify({ error: 'Order not found' }),
+      JSON.stringify({ error: 'Order not found after retries' }),
       {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -206,7 +239,7 @@ async function initiatePayment(supabaseClient: any, orderId: string, userId: str
     }
   }
 
-  console.log('Payment Request:', paymentRequest)
+  console.log('PhonePe PG - Payment Request:', paymentRequest)
 
   // Create base64 encoded payload
   const base64Payload = btoa(JSON.stringify(paymentRequest))
@@ -233,9 +266,9 @@ async function initiatePayment(supabaseClient: any, orderId: string, userId: str
     })
 
   if (transactionError) {
-    console.error('Error storing transaction:', transactionError)
+    console.error('PhonePe PG - Error storing transaction:', transactionError)
     return new Response(
-      JSON.stringify({ error: 'Failed to create transaction' }),
+      JSON.stringify({ error: 'Failed to create transaction', details: transactionError }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -248,9 +281,9 @@ async function initiatePayment(supabaseClient: any, orderId: string, userId: str
     ? 'https://api.phonepe.com/apis/hermes/pg/v1/pay'
     : 'https://api-preprod.phonepe.com/apis/hermes/pg/v1/pay'
 
-  console.log('Making request to PhonePe PG:', phonePeUrl)
-  console.log('Payload:', base64Payload)
-  console.log('Checksum:', checksum)
+  console.log('PhonePe PG - Making request to:', phonePeUrl)
+  console.log('PhonePe PG - Payload:', base64Payload)
+  console.log('PhonePe PG - Checksum:', checksum)
 
   const response = await fetch(phonePeUrl, {
     method: 'POST',
@@ -264,7 +297,7 @@ async function initiatePayment(supabaseClient: any, orderId: string, userId: str
   })
 
   const result = await response.json()
-  console.log('PhonePe PG Response:', result)
+  console.log('PhonePe PG - Response:', result)
 
   if (result.success && result.data?.instrumentResponse?.redirectInfo?.url) {
     return new Response(
@@ -278,7 +311,7 @@ async function initiatePayment(supabaseClient: any, orderId: string, userId: str
       }
     )
   } else {
-    console.error('PhonePe PG Error:', result)
+    console.error('PhonePe PG - Error:', result)
     return new Response(
       JSON.stringify({ error: 'Failed to initiate payment with PhonePe PG', details: result }),
       {
@@ -307,7 +340,7 @@ async function verifyPayment(supabaseClient: any, merchantTransactionId: string)
     ? `https://api.phonepe.com/apis/hermes/pg/v1/status/${merchantId}/${merchantTransactionId}`
     : `https://api-preprod.phonepe.com/apis/hermes/pg/v1/status/${merchantId}/${merchantTransactionId}`
 
-  console.log('Verifying payment with PhonePe PG:', phonePeUrl)
+  console.log('PhonePe PG - Verifying payment:', phonePeUrl)
 
   const response = await fetch(phonePeUrl, {
     method: 'GET',
@@ -319,7 +352,7 @@ async function verifyPayment(supabaseClient: any, merchantTransactionId: string)
   })
 
   const result = await response.json()
-  console.log('PhonePe PG Verification Response:', result)
+  console.log('PhonePe PG - Verification Response:', result)
 
   // Update payment transaction
   const { error: updateError } = await supabaseClient
@@ -332,7 +365,7 @@ async function verifyPayment(supabaseClient: any, merchantTransactionId: string)
     .eq('merchant_transaction_id', merchantTransactionId)
 
   if (updateError) {
-    console.error('Error updating transaction:', updateError)
+    console.error('PhonePe PG - Error updating transaction:', updateError)
   }
 
   // Update order if payment successful
@@ -356,7 +389,7 @@ async function verifyPayment(supabaseClient: any, merchantTransactionId: string)
         .eq('id', transaction.order_id)
 
       if (orderUpdateError) {
-        console.error('Error updating order:', orderUpdateError)
+        console.error('PhonePe PG - Error updating order:', orderUpdateError)
       }
     }
   }

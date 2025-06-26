@@ -35,10 +35,22 @@ const Checkout = () => {
   };
 
   const createOrder = async () => {
+    console.log('Checkout - Starting order creation...');
+    
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
+      console.error('Checkout - User not authenticated');
       throw new Error('User not authenticated');
     }
+
+    console.log('Checkout - Creating order for user:', user.id);
+    console.log('Checkout - Order data:', {
+      user_id: user.id,
+      total_amount: getTotalPrice(),
+      shipping_address: shippingInfo,
+      payment_method: paymentMethod,
+      items: items
+    });
 
     // Create order
     const { data: order, error: orderError } = await supabase
@@ -54,7 +66,12 @@ const Checkout = () => {
       .select()
       .single();
 
-    if (orderError) throw orderError;
+    if (orderError) {
+      console.error('Checkout - Order creation error:', orderError);
+      throw orderError;
+    }
+
+    console.log('Checkout - Order created successfully:', order);
 
     // Create order items
     const orderItems = items.map(item => ({
@@ -64,34 +81,57 @@ const Checkout = () => {
       price: item.product.price
     }));
 
+    console.log('Checkout - Creating order items:', orderItems);
+
     const { error: itemsError } = await supabase
       .from('order_items')
       .insert(orderItems);
 
-    if (itemsError) throw itemsError;
+    if (itemsError) {
+      console.error('Checkout - Order items creation error:', itemsError);
+      throw itemsError;
+    }
 
+    console.log('Checkout - Order items created successfully');
     return order;
   };
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Checkout - Form submitted, payment method:', paymentMethod);
     setIsProcessing(true);
 
     try {
+      // Validate form data
+      if (!shippingInfo.firstName || !shippingInfo.lastName || !shippingInfo.email || 
+          !shippingInfo.phone || !shippingInfo.address || !shippingInfo.city || 
+          !shippingInfo.state || !shippingInfo.pincode) {
+        throw new Error('Please fill in all required shipping information');
+      }
+
       const order = await createOrder();
+      console.log('Checkout - Order created, ID:', order.id);
 
       if (paymentMethod === 'online') {
-        // Initiate PhonePe payment
+        console.log('Checkout - Initiating PhonePe payment for order:', order.id);
+        
+        // Add a small delay to ensure order is properly committed
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         const paymentResult = await initiatePayment(order.id);
+        console.log('Checkout - Payment initiation result:', paymentResult);
         
         if (!paymentResult.success) {
+          console.error('Checkout - Payment initiation failed');
           throw new Error('Failed to initiate PhonePe payment');
         }
         
+        console.log('Checkout - Payment initiated successfully, redirecting...');
         // The user will be redirected to PhonePe, so we don't need to do anything else here
         return;
       } else {
         // Cash on Delivery
+        console.log('Checkout - COD order placed successfully');
         await clearCart();
 
         toast({
@@ -102,10 +142,23 @@ const Checkout = () => {
         navigate('/');
       }
     } catch (error) {
-      console.error('Error placing order:', error);
+      console.error('Checkout - Error placing order:', error);
+      
+      // More detailed error handling
+      let errorMessage = "Failed to place order. Please try again.";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null) {
+        if ('message' in error) {
+          errorMessage = String((error as any).message);
+        } else if ('details' in error) {
+          errorMessage = String((error as any).details);
+        }
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to place order. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -140,7 +193,7 @@ const Checkout = () => {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="firstName">First Name</Label>
+                  <Label htmlFor="firstName">First Name *</Label>
                   <Input
                     id="firstName"
                     value={shippingInfo.firstName}
@@ -150,7 +203,7 @@ const Checkout = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="lastName">Last Name</Label>
+                  <Label htmlFor="lastName">Last Name *</Label>
                   <Input
                     id="lastName"
                     value={shippingInfo.lastName}
@@ -162,7 +215,7 @@ const Checkout = () => {
               </div>
               
               <div>
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Email *</Label>
                 <Input
                   id="email"
                   type="email"
@@ -174,7 +227,7 @@ const Checkout = () => {
               </div>
               
               <div>
-                <Label htmlFor="phone">Phone</Label>
+                <Label htmlFor="phone">Phone *</Label>
                 <Input
                   id="phone"
                   value={shippingInfo.phone}
@@ -185,7 +238,7 @@ const Checkout = () => {
               </div>
               
               <div>
-                <Label htmlFor="address">Address</Label>
+                <Label htmlFor="address">Address *</Label>
                 <Input
                   id="address"
                   value={shippingInfo.address}
@@ -197,7 +250,7 @@ const Checkout = () => {
               
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <Label htmlFor="city">City</Label>
+                  <Label htmlFor="city">City *</Label>
                   <Input
                     id="city"
                     value={shippingInfo.city}
@@ -207,7 +260,7 @@ const Checkout = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="state">State</Label>
+                  <Label htmlFor="state">State *</Label>
                   <Input
                     id="state"
                     value={shippingInfo.state}
@@ -217,7 +270,7 @@ const Checkout = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="pincode">Pincode</Label>
+                  <Label htmlFor="pincode">Pincode *</Label>
                   <Input
                     id="pincode"
                     value={shippingInfo.pincode}
@@ -313,7 +366,7 @@ const Checkout = () => {
                 className="w-full bg-green-600 hover:bg-green-700 text-white"
               >
                 {isProcessing || isPhonePeProcessing 
-                  ? (paymentMethod === 'online' ? 'Redirecting to PhonePe...' : 'Processing...') 
+                  ? (paymentMethod === 'online' ? 'Processing Payment...' : 'Processing Order...') 
                   : (paymentMethod === 'online' ? 'Pay with PhonePe' : 'Place Order')
                 }
               </Button>
