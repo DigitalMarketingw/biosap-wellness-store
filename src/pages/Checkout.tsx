@@ -2,14 +2,13 @@
 import React, { useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { usePhonePePayment } from '@/hooks/usePhonePePayment';
+import ShippingForm from '@/components/checkout/ShippingForm';
+import PaymentMethodSelector from '@/components/checkout/PaymentMethodSelector';
+import OrderSummary from '@/components/checkout/OrderSummary';
 
 const Checkout = () => {
   const { items, getTotalPrice, clearCart } = useCart();
@@ -131,8 +130,7 @@ const Checkout = () => {
     return order;
   };
 
-  const handlePlaceOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handlePlaceOrder = async () => {
     console.log('Checkout - Form submitted, payment method:', paymentMethod);
     
     // Validate form first
@@ -216,222 +214,31 @@ const Checkout = () => {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold text-green-800 mb-8">Checkout</h1>
       
-      <form onSubmit={handlePlaceOrder} className="grid lg:grid-cols-2 gap-8">
+      <div className="grid lg:grid-cols-2 gap-8">
         <div className="space-y-6">
-          <Card className="border-green-100">
-            <CardHeader>
-              <CardTitle className="text-green-800">Shipping Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="firstName">First Name *</Label>
-                  <Input
-                    id="firstName"
-                    value={shippingInfo.firstName}
-                    onChange={(e) => handleInputChange('firstName', e.target.value)}
-                    required
-                    className={`border-green-200 ${validationErrors.firstName ? 'border-red-500' : ''}`}
-                  />
-                  {validationErrors.firstName && (
-                    <p className="text-red-500 text-sm mt-1">{validationErrors.firstName}</p>
-                  )}
-                </div>
-                <div>
-                  <Label htmlFor="lastName">Last Name *</Label>
-                  <Input
-                    id="lastName"
-                    value={shippingInfo.lastName}
-                    onChange={(e) => handleInputChange('lastName', e.target.value)}
-                    required
-                    className={`border-green-200 ${validationErrors.lastName ? 'border-red-500' : ''}`}
-                  />
-                  {validationErrors.lastName && (
-                    <p className="text-red-500 text-sm mt-1">{validationErrors.lastName}</p>
-                  )}
-                </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="email">Email *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={shippingInfo.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  required
-                  className={`border-green-200 ${validationErrors.email ? 'border-red-500' : ''}`}
-                />
-                {validationErrors.email && (
-                  <p className="text-red-500 text-sm mt-1">{validationErrors.email}</p>
-                )}
-              </div>
-              
-              <div>
-                <Label htmlFor="phone">Phone *</Label>
-                <Input
-                  id="phone"
-                  value={shippingInfo.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  required
-                  placeholder="10-digit mobile number"
-                  className={`border-green-200 ${validationErrors.phone ? 'border-red-500' : ''}`}
-                />
-                {validationErrors.phone && (
-                  <p className="text-red-500 text-sm mt-1">{validationErrors.phone}</p>
-                )}
-              </div>
-              
-              <div>
-                <Label htmlFor="address">Address *</Label>
-                <Input
-                  id="address"
-                  value={shippingInfo.address}
-                  onChange={(e) => handleInputChange('address', e.target.value)}
-                  required
-                  className={`border-green-200 ${validationErrors.address ? 'border-red-500' : ''}`}
-                />
-                {validationErrors.address && (
-                  <p className="text-red-500 text-sm mt-1">{validationErrors.address}</p>
-                )}
-              </div>
-              
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="city">City *</Label>
-                  <Input
-                    id="city"
-                    value={shippingInfo.city}
-                    onChange={(e) => handleInputChange('city', e.target.value)}
-                    required
-                    className={`border-green-200 ${validationErrors.city ? 'border-red-500' : ''}`}
-                  />
-                  {validationErrors.city && (
-                    <p className="text-red-500 text-sm mt-1">{validationErrors.city}</p>
-                  )}
-                </div>
-                <div>
-                  <Label htmlFor="state">State *</Label>
-                  <Input
-                    id="state"
-                    value={shippingInfo.state}
-                    onChange={(e) => handleInputChange('state', e.target.value)}
-                    required
-                    className={`border-green-200 ${validationErrors.state ? 'border-red-500' : ''}`}
-                  />
-                  {validationErrors.state && (
-                    <p className="text-red-500 text-sm mt-1">{validationErrors.state}</p>
-                  )}
-                </div>
-                <div>
-                  <Label htmlFor="pincode">Pincode *</Label>
-                  <Input
-                    id="pincode"
-                    value={shippingInfo.pincode}
-                    onChange={(e) => handleInputChange('pincode', e.target.value)}
-                    required
-                    placeholder="6-digit pincode"
-                    className={`border-green-200 ${validationErrors.pincode ? 'border-red-500' : ''}`}
-                  />
-                  {validationErrors.pincode && (
-                    <p className="text-red-500 text-sm mt-1">{validationErrors.pincode}</p>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <ShippingForm
+            shippingInfo={shippingInfo}
+            validationErrors={validationErrors}
+            onInputChange={handleInputChange}
+          />
 
-          <Card className="border-green-100">
-            <CardHeader>
-              <CardTitle className="text-green-800">Payment Method</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <label className="flex items-center space-x-3 cursor-pointer p-3 border border-gray-200 rounded-lg hover:border-green-300 transition-colors">
-                  <input
-                    type="radio"
-                    name="payment"
-                    value="cod"
-                    checked={paymentMethod === 'cod'}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="text-green-600"
-                  />
-                  <div className="flex-1">
-                    <span className="font-medium">Cash on Delivery</span>
-                    <p className="text-sm text-gray-600">Pay when your order arrives</p>
-                  </div>
-                </label>
-                
-                <label className="flex items-center space-x-3 cursor-pointer p-3 border border-gray-200 rounded-lg hover:border-green-300 transition-colors">
-                  <input
-                    type="radio"
-                    name="payment"
-                    value="online"
-                    checked={paymentMethod === 'online'}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="text-green-600"
-                  />
-                  <div className="flex-1">
-                    <span className="font-medium">PhonePe Payment</span>
-                    <p className="text-sm text-gray-600">Pay securely with PhonePe, UPI, Cards & more</p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-8 h-6 bg-purple-600 rounded text-white text-xs flex items-center justify-center font-bold">
-                      Pe
-                    </div>
-                  </div>
-                </label>
-              </div>
-            </CardContent>
-          </Card>
+          <PaymentMethodSelector
+            paymentMethod={paymentMethod}
+            onPaymentMethodChange={setPaymentMethod}
+          />
         </div>
 
         <div>
-          <Card className="border-green-100 sticky top-4">
-            <CardHeader>
-              <CardTitle className="text-green-800">Order Summary</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {items.map((item) => (
-                <div key={item.id} className="flex justify-between">
-                  <span className="text-sm">{item.product.name} × {item.quantity}</span>
-                  <span className="text-sm">₹{(item.product.price * item.quantity).toFixed(2)}</span>
-                </div>
-              ))}
-              
-              <Separator />
-              
-              <div className="flex justify-between">
-                <span>Subtotal</span>
-                <span>₹{getTotalPrice().toFixed(2)}</span>
-              </div>
-              
-              <div className="flex justify-between">
-                <span>Shipping</span>
-                <span className="text-green-600">Free</span>
-              </div>
-              
-              <Separator />
-              
-              <div className="flex justify-between text-lg font-bold">
-                <span>Total</span>
-                <span className="text-green-800">₹{getTotalPrice().toFixed(2)}</span>
-              </div>
-              
-              <Button
-                type="submit"
-                disabled={isProcessing || isPhonePeProcessing}
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
-              >
-                {isProcessing || isPhonePeProcessing 
-                  ? (paymentMethod === 'online' ? 'Processing Payment...' : 'Processing Order...') 
-                  : (paymentMethod === 'online' ? 'Pay with PhonePe' : 'Place Order')
-                }
-              </Button>
-            </CardContent>
-          </Card>
+          <OrderSummary
+            items={items}
+            totalPrice={getTotalPrice()}
+            paymentMethod={paymentMethod}
+            isProcessing={isProcessing}
+            isPhonePeProcessing={isPhonePeProcessing}
+            onSubmit={handlePlaceOrder}
+          />
         </div>
-      </form>
+      </div>
     </div>
   );
 };
