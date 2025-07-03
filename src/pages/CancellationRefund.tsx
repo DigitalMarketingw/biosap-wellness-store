@@ -157,8 +157,9 @@ const CancellationRefund = () => {
                 For all cancellation and refund requests, please contact us:
               </p>
               <div className="space-y-2 text-gray-700">
-                <p><strong>Email:</strong> returns@biosap.com</p>
-                <p><strong>Phone:</strong> +91-XXXXXXXXXX</p>
+                <p><strong>Email:</strong> plantsmedg@gmail.com</p>
+                <p><strong>Phone:</strong> +91-9799774222</p>
+                <p><strong>Phone:</strong> +91-9351120119</p>
                 <p><strong>Hours:</strong> Monday - Saturday, 9 AM - 6 PM</p>
               </div>
               <div className="mt-4 p-4 bg-gray-50 rounded-lg">

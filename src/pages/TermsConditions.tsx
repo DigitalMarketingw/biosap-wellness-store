@@ -137,8 +137,9 @@ const TermsConditions = () => {
                 For questions about these Terms and Conditions, please contact us at:
               </p>
               <div className="mt-4 text-gray-700">
-                <p>Email: legal@biosap.com</p>
-                <p>Phone: +91-XXXXXXXXXX</p>
+                <p>Email: plantsmedg@gmail.com</p>
+                <p>Phone: +91-9799774222</p>
+                <p>Phone: +91-9351120119</p>
               </div>
             </CardContent>
           </Card>
