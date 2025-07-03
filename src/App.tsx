@@ -22,6 +22,10 @@ import Wishlist from "./pages/Wishlist";
 import Checkout from "./pages/Checkout";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentFailed from "./pages/PaymentFailed";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsConditions from "./pages/TermsConditions";
+import CancellationRefund from "./pages/CancellationRefund";
+import ShippingDelivery from "./pages/ShippingDelivery";
 import NotFound from "./pages/NotFound";
 import SignIn from "./pages/auth/SignIn";
 import SignUp from "./pages/auth/SignUp";
@@ -66,6 +70,12 @@ const App = () => (
                   <Route path="/categories" element={<Layout><Categories /></Layout>} />
                   <Route path="/cart" element={<Layout><Cart /></Layout>} />
                   <Route path="/wishlist" element={<Layout><Wishlist /></Layout>} />
+                  
+                  {/* Legal Pages */}
+                  <Route path="/privacy-policy" element={<Layout><PrivacyPolicy /></Layout>} />
+                  <Route path="/terms-conditions" element={<Layout><TermsConditions /></Layout>} />
+                  <Route path="/cancellation-refund" element={<Layout><CancellationRefund /></Layout>} />
+                  <Route path="/shipping-delivery" element={<Layout><ShippingDelivery /></Layout>} />
                   
                   {/* Payment Routes - Updated for PhonePe PG */}
                   <Route path="/payment-success" element={<Layout><PaymentSuccess /></Layout>} />
