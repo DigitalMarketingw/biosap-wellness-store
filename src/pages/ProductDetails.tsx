@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -14,9 +14,10 @@ import ProductCard from '@/components/ProductCard';
 
 const ProductDetails = () => {
   const { id } = useParams<{ id: string }>();
-  const { addToCart } = useCart();
+  const { addToCart, updateQuantity, getItemInCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
 
@@ -58,6 +59,18 @@ const ProductDetails = () => {
     enabled: !!product?.category_id
   });
 
+  // Get cart item info
+  const cartItem = product ? getItemInCart(product.id) : null;
+  const isInCart = !!cartItem;
+  const cartQuantity = cartItem?.quantity || 0;
+
+  // Sync quantity state with cart when product is in cart
+  useEffect(() => {
+    if (isInCart && cartQuantity > 0) {
+      setQuantity(cartQuantity);
+    }
+  }, [isInCart, cartQuantity]);
+
   const handleAddToCart = () => {
     if (product) {
       addToCart(product.id, quantity);
@@ -66,6 +79,22 @@ const ProductDetails = () => {
         title: "Added to cart",
         description: `${product.name} has been added to your cart.`,
       });
+    }
+  };
+
+  const handleGoToCart = () => {
+    navigate('/cart');
+  };
+
+  const handleQuantityChange = (newQuantity: number) => {
+    if (product) {
+      if (isInCart) {
+        // If product is in cart, update cart quantity directly
+        updateQuantity(product.id, newQuantity);
+      } else {
+        // If not in cart, just update local state
+        setQuantity(newQuantity);
+      }
     }
   };
 
@@ -189,91 +218,101 @@ const ProductDetails = () => {
 
           {/* Product Info */}
           <div className="space-y-6">
-            <div>
-              {product.categories && (
-                <Badge variant="secondary" className="bg-green-100 text-green-700 mb-2">
-                  {product.categories.name}
-                </Badge>
-              )}
-              <h1 className="text-3xl font-bold text-green-800 mb-2">{product.name}</h1>
+            {product.categories && (
+              <Badge variant="secondary" className="bg-green-100 text-green-700 mb-2">
+                {product.categories.name}
+              </Badge>
+            )}
+            <h1 className="text-3xl font-bold text-green-800 mb-2">{product.name}</h1>
+            
+            <div className="flex items-center gap-4 mb-4">
+              <div className="flex items-center">
+                {[...Array(5)].map((_, i) => (
+                  <Star 
+                    key={i} 
+                    className={`h-5 w-5 ${
+                      i < Math.floor(rating) 
+                        ? 'text-yellow-400 fill-current' 
+                        : 'text-gray-300'
+                    }`} 
+                  />
+                ))}
+                <span className="ml-2 text-green-600">
+                  {rating.toFixed(1)} ({reviewCount} reviews)
+                </span>
+              </div>
               
-              <div className="flex items-center gap-4 mb-4">
-                <div className="flex items-center">
-                  {[...Array(5)].map((_, i) => (
-                    <Star 
-                      key={i} 
-                      className={`h-5 w-5 ${
-                        i < Math.floor(rating) 
-                          ? 'text-yellow-400 fill-current' 
-                          : 'text-gray-300'
-                      }`} 
-                    />
-                  ))}
-                  <span className="ml-2 text-green-600">
-                    {rating.toFixed(1)} ({reviewCount} reviews)
-                  </span>
-                </div>
-                
-                {product.is_featured && (
-                  <Badge className="bg-yellow-500 text-white">Featured</Badge>
-                )}
-              </div>
-
-              <div className="text-3xl font-bold text-green-800 mb-4">
-                ₹{product.price.toLocaleString()}
-              </div>
-
-              <p className="text-gray-600 leading-relaxed mb-6">
-                {product.description}
-              </p>
+              {product.is_featured && (
+                <Badge className="bg-yellow-500 text-white">Featured</Badge>
+              )}
             </div>
 
-            {/* Benefits */}
-            {product.benefits && product.benefits.length > 0 && (
-              <div>
-                <h3 className="text-lg font-semibold text-green-800 mb-3">Key Benefits</h3>
-                <div className="flex flex-wrap gap-2">
-                  {product.benefits.map((benefit, index) => (
-                    <Badge key={index} variant="outline" className="border-green-300 text-green-700">
-                      {benefit}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
+            <div className="text-3xl font-bold text-green-800 mb-4">
+              ₹{product.price.toLocaleString()}
+            </div>
 
-            {/* Quantity and Actions */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <span className="font-medium text-green-800">Quantity:</span>
-                <div className="flex items-center border border-green-300 rounded-lg">
-                  <button 
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="p-2 hover:bg-green-50 text-green-600"
-                  >
-                    -
-                  </button>
-                  <span className="px-4 py-2 font-medium">{quantity}</span>
-                  <button 
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="p-2 hover:bg-green-50 text-green-600"
-                  >
-                    +
-                  </button>
-                </div>
-                
-                {product.stock && product.stock > 0 ? (
-                  <Badge variant="secondary" className="bg-green-100 text-green-700">
-                    {product.stock} in stock
-                  </Badge>
-                ) : (
-                  <Badge variant="secondary" className="bg-red-100 text-red-700">
-                    Out of stock
-                  </Badge>
-                )}
-              </div>
+            <p className="text-gray-600 leading-relaxed mb-6">
+              {product.description}
+            </p>
+          </div>
 
-              <div className="flex gap-3">
+          {/* Benefits */}
+          {product.benefits && product.benefits.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold text-green-800 mb-3">Key Benefits</h3>
+              <div className="flex flex-wrap gap-2">
+                {product.benefits.map((benefit, index) => (
+                  <Badge key={index} variant="outline" className="border-green-300 text-green-700">
+                    {benefit}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Quantity and Actions */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <span className="font-medium text-green-800">Quantity:</span>
+              <div className="flex items-center border border-green-300 rounded-lg">
+                <button 
+                  onClick={() => handleQuantityChange(Math.max(1, quantity - 1))}
+                  className="p-2 hover:bg-green-50 text-green-600"
+                  disabled={quantity <= 1}
+                >
+                  -
+                </button>
+                <span className="px-4 py-2 font-medium">{quantity}</span>
+                <button 
+                  onClick={() => handleQuantityChange(quantity + 1)}
+                  className="p-2 hover:bg-green-50 text-green-600"
+                  disabled={product.stock !== null && quantity >= product.stock}
+                >
+                  +
+                </button>
+              </div>
+              
+              {product.stock && product.stock > 0 ? (
+                <Badge variant="secondary" className="bg-green-100 text-green-700">
+                  {product.stock} in stock
+                </Badge>
+              ) : (
+                <Badge variant="secondary" className="bg-red-100 text-red-700">
+                  Out of stock
+                </Badge>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              {isInCart ? (
+                <Button 
+                  onClick={handleGoToCart}
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                >
+                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  Go to Cart ({cartQuantity} in cart)
+                </Button>
+              ) : (
                 <Button 
                   onClick={handleAddToCart}
                   disabled={!product.stock || product.stock === 0}
@@ -282,35 +321,35 @@ const ProductDetails = () => {
                   <ShoppingCart className="h-4 w-4 mr-2" />
                   Add to Cart
                 </Button>
-                
-                <Button 
-                  variant="outline" 
-                  onClick={handleToggleWishlist}
-                  className={`border-green-600 ${
-                    isInWishlist(product.id) 
-                      ? 'bg-green-600 text-white' 
-                      : 'text-green-600 hover:bg-green-50'
-                  }`}
-                >
-                  <Heart className={`h-4 w-4 ${isInWishlist(product.id) ? 'fill-current' : ''}`} />
-                </Button>
-              </div>
+              )}
+              
+              <Button 
+                variant="outline" 
+                onClick={handleToggleWishlist}
+                className={`border-green-600 ${
+                  isInWishlist(product.id) 
+                    ? 'bg-green-600 text-white' 
+                    : 'text-green-600 hover:bg-green-50'
+                }`}
+              >
+                <Heart className={`h-4 w-4 ${isInWishlist(product.id) ? 'fill-current' : ''}`} />
+              </Button>
             </div>
+          </div>
 
-            {/* Shipping Info */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="flex items-center gap-2 text-sm text-green-600">
-                <Truck className="h-4 w-4" />
-                <span>Free shipping over ₹999</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-green-600">
-                <Shield className="h-4 w-4" />
-                <span>Quality guaranteed</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-green-600">
-                <RotateCcw className="h-4 w-4" />
-                <span>Easy returns</span>
-              </div>
+          {/* Shipping Info */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="flex items-center gap-2 text-sm text-green-600">
+              <Truck className="h-4 w-4" />
+              <span>Free shipping over ₹999</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-green-600">
+              <Shield className="h-4 w-4" />
+              <span>Quality guaranteed</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-green-600">
+              <RotateCcw className="h-4 w-4" />
+              <span>Easy returns</span>
             </div>
           </div>
         </div>

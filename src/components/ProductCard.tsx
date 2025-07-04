@@ -1,10 +1,9 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Star, ShoppingCart, Heart } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Star, ShoppingCart, Heart, Plus, Minus } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '@/contexts/CartContext';
 import { useWishlist } from '@/contexts/WishlistContext';
 import { useToast } from '@/hooks/use-toast';
@@ -25,9 +24,10 @@ interface ProductCardProps {
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
-  const { addToCart } = useCart();
+  const { addToCart, updateQuantity, getItemInCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   // Helper function to get a valid image URL with better debugging
   const getValidImageUrl = () => {
@@ -57,6 +57,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const rating = product.rating || 0;
   const reviewCount = product.review_count || 0;
   const inWishlist = isInWishlist(product.id);
+  const cartItem = getItemInCart(product.id);
+  const isInCart = !!cartItem;
+  const cartQuantity = cartItem?.quantity || 0;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -68,6 +71,21 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       title: "Added to cart",
       description: `${product.name} has been added to your cart.`,
     });
+  };
+
+  const handleGoToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate('/cart');
+  };
+
+  const handleQuantityUpdate = (e: React.MouseEvent, newQuantity: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (newQuantity > 0) {
+      updateQuantity(product.id, newQuantity);
+    }
   };
 
   const handleToggleWishlist = (e: React.MouseEvent) => {
@@ -191,15 +209,55 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               <div className="text-2xl font-bold text-green-800">
                 ₹{product.price.toLocaleString()}
               </div>
-              <Button 
-                size="sm" 
-                className="bg-green-600 hover:bg-green-700 text-white"
-                onClick={handleAddToCart}
-                disabled={product.stock !== undefined && product.stock === 0}
-              >
-                <ShoppingCart className="h-4 w-4 mr-1" />
-                Add to Cart
-              </Button>
+              
+              <div className="flex flex-col items-end space-y-2">
+                {isInCart && (
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-7 w-7 border-green-300"
+                      onClick={(e) => handleQuantityUpdate(e, cartQuantity - 1)}
+                      disabled={product.stock !== undefined && product.stock === 0}
+                    >
+                      <Minus className="h-3 w-3" />
+                    </Button>
+                    <span className="text-sm font-medium min-w-[1.5rem] text-center">
+                      {cartQuantity}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-7 w-7 border-green-300"
+                      onClick={(e) => handleQuantityUpdate(e, cartQuantity + 1)}
+                      disabled={product.stock !== undefined && cartQuantity >= product.stock}
+                    >
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
+                
+                {isInCart ? (
+                  <Button 
+                    size="sm" 
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                    onClick={handleGoToCart}
+                  >
+                    <ShoppingCart className="h-4 w-4 mr-1" />
+                    Go to Cart
+                  </Button>
+                ) : (
+                  <Button 
+                    size="sm" 
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                    onClick={handleAddToCart}
+                    disabled={product.stock !== undefined && product.stock === 0}
+                  >
+                    <ShoppingCart className="h-4 w-4 mr-1" />
+                    Add to Cart
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </CardContent>

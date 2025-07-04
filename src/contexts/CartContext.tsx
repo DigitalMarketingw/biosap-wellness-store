@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +23,7 @@ interface CartContextType {
   clearCart: () => Promise<void>;
   getTotalPrice: () => number;
   getTotalItems: () => number;
+  getItemInCart: (productId: string) => CartItem | null;
   isLoading: boolean;
 }
 
@@ -185,6 +185,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return items.reduce((total, item) => total + item.quantity, 0);
   };
 
+  const getItemInCart = (productId: string): CartItem | null => {
+    return items.find(item => item.product_id === productId) || null;
+  };
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
@@ -210,6 +214,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       clearCart,
       getTotalPrice,
       getTotalItems,
+      getItemInCart,
       isLoading
     }}>
       {children}
