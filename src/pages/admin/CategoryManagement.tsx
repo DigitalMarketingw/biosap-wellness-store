@@ -1,14 +1,15 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAdmin } from '@/contexts/AdminContext';
-import { Plus, Edit, Trash2, Package, Search } from 'lucide-react';
+import { Plus, Edit, Trash2, Package, Search, Upload, Link } from 'lucide-react';
+import CategoryImageUpload from '@/components/admin/CategoryImageUpload';
 
 interface Category {
   id: string;
@@ -25,6 +26,7 @@ const CategoryManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [imageMethod, setImageMethod] = useState<'upload' | 'url'>('upload');
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -100,6 +102,7 @@ const CategoryManagement = () => {
       setFormData({ name: '', description: '', image_url: '' });
       setEditingCategory(null);
       setShowForm(false);
+      setImageMethod('upload');
       fetchCategories();
     } catch (error) {
       console.error('Error saving category:', error);
@@ -118,6 +121,9 @@ const CategoryManagement = () => {
       description: category.description || '',
       image_url: category.image_url || ''
     });
+    // Determine which method to use based on existing image URL
+    const isUploadedImage = category.image_url?.includes('supabase.co') || category.image_url?.includes('categories/');
+    setImageMethod(isUploadedImage ? 'upload' : 'url');
     setShowForm(true);
   };
 
@@ -153,6 +159,17 @@ const CategoryManagement = () => {
     (category.description && category.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  const handleImageUpload = (imageUrl: string) => {
+    setFormData({ ...formData, image_url: imageUrl });
+  };
+
+  const resetForm = () => {
+    setEditingCategory(null);
+    setFormData({ name: '', description: '', image_url: '' });
+    setImageMethod('upload');
+    setShowForm(true);
+  };
+
   if (loading) {
     return <div className="p-6">Loading categories...</div>;
   }
@@ -165,11 +182,7 @@ const CategoryManagement = () => {
           <p className="text-gray-600">Manage product categories</p>
         </div>
         <Button 
-          onClick={() => {
-            setEditingCategory(null);
-            setFormData({ name: '', description: '', image_url: '' });
-            setShowForm(true);
-          }}
+          onClick={resetForm}
           className="bg-green-600 hover:bg-green-700"
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -201,7 +214,7 @@ const CategoryManagement = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <Label htmlFor="name">Name *</Label>
                 <Input
@@ -212,6 +225,7 @@ const CategoryManagement = () => {
                   required
                 />
               </div>
+              
               <div>
                 <Label htmlFor="description">Description</Label>
                 <Input
@@ -221,15 +235,53 @@ const CategoryManagement = () => {
                   placeholder="Category description"
                 />
               </div>
-              <div>
-                <Label htmlFor="image_url">Image URL</Label>
-                <Input
-                  id="image_url"
-                  value={formData.image_url}
-                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                  placeholder="https://example.com/image.jpg"
-                />
+
+              {/* Image Upload/URL Section */}
+              <div className="space-y-4">
+                <Label>Category Image</Label>
+                <Tabs value={imageMethod} onValueChange={(value) => setImageMethod(value as 'upload' | 'url')}>
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="upload" className="flex items-center gap-2">
+                      <Upload className="h-4 w-4" />
+                      Upload Image
+                    </TabsTrigger>
+                    <TabsTrigger value="url" className="flex items-center gap-2">
+                      <Link className="h-4 w-4" />
+                      Image URL
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="upload" className="mt-4">
+                    <CategoryImageUpload
+                      imageUrl={formData.image_url}
+                      onImageChange={handleImageUpload}
+                    />
+                  </TabsContent>
+                  
+                  <TabsContent value="url" className="mt-4">
+                    <div className="space-y-4">
+                      <Input
+                        placeholder="https://example.com/image.jpg"
+                        value={formData.image_url}
+                        onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                      />
+                      {formData.image_url && (
+                        <div className="aspect-video w-full max-w-sm rounded-lg overflow-hidden border-2 border-gray-200 bg-gray-100">
+                          <img 
+                            src={formData.image_url}
+                            alt="Category preview"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.error('Failed to load image URL:', formData.image_url);
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </div>
+
               <div className="flex gap-2">
                 <Button type="submit" className="bg-green-600 hover:bg-green-700">
                   {editingCategory ? 'Update' : 'Create'} Category
@@ -269,7 +321,14 @@ const CategoryManagement = () => {
                       <img 
                         src={category.image_url} 
                         alt={category.name}
-                        className="w-12 h-12 object-cover rounded"
+                        className="w-16 h-16 object-cover rounded-lg border-2 border-green-200"
+                        onError={(e) => {
+                          console.error('Failed to load category image:', category.image_url);
+                          const target = e.target as HTMLImageElement;
+                          if (target.src !== '/placeholder.svg') {
+                            target.src = '/placeholder.svg';
+                          }
+                        }}
                       />
                     )}
                     <div>
