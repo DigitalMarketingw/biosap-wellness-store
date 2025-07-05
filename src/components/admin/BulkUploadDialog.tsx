@@ -34,9 +34,9 @@ const BulkUploadDialog = ({ open, onOpenChange, onUploadComplete }: BulkUploadDi
   const { toast } = useToast();
   const { adminUser } = useAdmin();
 
-  const csvTemplate = `name,description,price,stock,sku,category_name,supplier_name,reorder_point,reorder_quantity,is_active,is_featured,image_urls,ingredients,usage_instructions,benefits
-"Ashwagandha Capsules","Premium quality Ashwagandha for stress relief",25.99,100,"ASH-001","supplements","Herbal Suppliers Ltd",10,50,true,false,"https://example.com/image1.jpg","Ashwagandha root extract 500mg","Take 1-2 capsules daily with meals","Stress relief;Improved energy;Better sleep"
-"Turmeric Powder","Organic turmeric powder for cooking and health",12.50,200,"TUR-001","spices","Organic Farms Co",20,100,true,true,"https://example.com/image2.jpg;https://example.com/image3.jpg","100% organic turmeric","Use 1 tsp in cooking or mix with warm milk","Anti-inflammatory;Antioxidant;Digestive support"`;
+  const csvTemplate = `name,description,price,stock,sku,category_name,reorder_point,reorder_quantity,is_active,is_featured,image_urls,ingredients,usage_instructions,benefits
+"Ashwagandha Capsules","Premium quality Ashwagandha for stress relief",25.99,100,"ASH-001","supplements",10,50,true,false,"https://example.com/image1.jpg","Ashwagandha root extract 500mg","Take 1-2 capsules daily with meals","Stress relief;Improved energy;Better sleep"
+"Turmeric Powder","Organic turmeric powder for cooking and health",12.50,200,"TUR-001","spices",20,100,true,true,"https://example.com/image2.jpg;https://example.com/image3.jpg","100% organic turmeric","Use 1 tsp in cooking or mix with warm milk","Anti-inflammatory;Antioxidant;Digestive support"`;
 
   const downloadTemplate = () => {
     const blob = new Blob([csvTemplate], { type: 'text/csv' });
@@ -161,17 +161,6 @@ const BulkUploadDialog = ({ open, onOpenChange, onUploadComplete }: BulkUploadDi
             categoryId = category?.id || null;
           }
 
-          // Get supplier ID if supplier_name is provided
-          let supplierId = null;
-          if (product.supplier_name) {
-            const { data: supplier } = await supabase
-              .from('suppliers')
-              .select('id')
-              .ilike('name', product.supplier_name)
-              .maybeSingle();
-            supplierId = supplier?.id || null;
-          }
-
           const productData = {
             name: product.name,
             description: product.description || null,
@@ -179,7 +168,6 @@ const BulkUploadDialog = ({ open, onOpenChange, onUploadComplete }: BulkUploadDi
             stock: parseInt(product.stock),
             sku: product.sku || null,
             category_id: categoryId,
-            supplier_id: supplierId,
             reorder_point: product.reorder_point ? parseInt(product.reorder_point) : 10,
             reorder_quantity: product.reorder_quantity ? parseInt(product.reorder_quantity) : 50,
             is_active: product.is_active === 'true',
@@ -391,7 +379,7 @@ const BulkUploadDialog = ({ open, onOpenChange, onUploadComplete }: BulkUploadDi
               <h3 className="font-medium mb-2">CSV Format Instructions</h3>
               <div className="text-sm text-gray-600 space-y-2">
                 <p><strong>Required fields:</strong> name, price, stock</p>
-                <p><strong>Optional fields:</strong> description, sku, category_name, supplier_name, etc.</p>
+                <p><strong>Optional fields:</strong> description, sku, category_name, etc.</p>
                 <p><strong>Array fields:</strong> Separate multiple values with semicolons (;)</p>
                 <p><strong>Example:</strong> image_urls: "url1.jpg;url2.jpg;url3.jpg"</p>
                 <p><strong>Boolean fields:</strong> Use "true" or "false" for is_active and is_featured</p>

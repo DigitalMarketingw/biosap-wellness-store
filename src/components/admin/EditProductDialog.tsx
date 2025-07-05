@@ -49,7 +49,6 @@ const EditProductDialog: React.FC<EditProductDialogProps> = ({
   const { logAdminActivity } = useAdmin();
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
-  const [suppliers, setSuppliers] = useState<any[]>([]);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -60,7 +59,6 @@ const EditProductDialog: React.FC<EditProductDialogProps> = ({
     is_active: true,
     is_featured: false,
     category_id: '',
-    supplier_id: '',
     reorder_point: '',
     reorder_quantity: '',
     image_urls: [] as string[],
@@ -80,7 +78,6 @@ const EditProductDialog: React.FC<EditProductDialogProps> = ({
         is_active: product.is_active,
         is_featured: product.is_featured,
         category_id: product.category_id || '',
-        supplier_id: product.supplier_id || '',
         reorder_point: product.reorder_point.toString(),
         reorder_quantity: product.reorder_quantity.toString(),
         image_urls: product.image_urls || [],
@@ -94,7 +91,6 @@ const EditProductDialog: React.FC<EditProductDialogProps> = ({
   useEffect(() => {
     if (open) {
       fetchCategories();
-      fetchSuppliers();
     }
   }, [open]);
 
@@ -111,28 +107,6 @@ const EditProductDialog: React.FC<EditProductDialogProps> = ({
       console.error('Error fetching categories:', error);
     }
   };
-
-  const fetchSuppliers = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('suppliers')
-        .select('id, name')
-        .eq('is_active', true)
-        .order('name');
-      
-      if (error) throw error;
-      setSuppliers(data || []);
-    } catch (error) {
-      console.error('Error fetching suppliers:', error);
-    }
-  };
-
-  useEffect(() => {
-    if (open) {
-      fetchCategories();
-      fetchSuppliers();
-    }
-  }, [open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -154,7 +128,6 @@ const EditProductDialog: React.FC<EditProductDialogProps> = ({
         is_active: formData.is_active,
         is_featured: formData.is_featured,
         category_id: formData.category_id || null,
-        supplier_id: formData.supplier_id || null,
         reorder_point: parseInt(formData.reorder_point),
         reorder_quantity: parseInt(formData.reorder_quantity),
         image_urls: formData.image_urls,
@@ -270,25 +243,6 @@ const EditProductDialog: React.FC<EditProductDialogProps> = ({
                   {categories.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="supplier">Supplier</Label>
-              <Select
-                value={formData.supplier_id}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, supplier_id: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select supplier" />
-                </SelectTrigger>
-                <SelectContent>
-                  {suppliers.map((supplier) => (
-                    <SelectItem key={supplier.id} value={supplier.id}>
-                      {supplier.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

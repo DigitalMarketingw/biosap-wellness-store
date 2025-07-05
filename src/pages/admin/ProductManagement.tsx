@@ -65,7 +65,14 @@ const ProductManagement = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProducts(data || []);
+      
+      // Add supplier_id: null to each product since it's required by the interface but not in the data
+      const productsWithSupplier = (data || []).map(product => ({
+        ...product,
+        supplier_id: null
+      }));
+      
+      setProducts(productsWithSupplier);
       await logAdminActivity('view', 'products');
     } catch (error) {
       console.error('Error fetching products:', error);

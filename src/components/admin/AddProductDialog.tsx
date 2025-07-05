@@ -25,7 +25,6 @@ const productSchema = z.object({
   stock: z.number().min(0, 'Stock cannot be negative'),
   sku: z.string().optional(),
   category_id: z.string().optional(),
-  supplier_id: z.string().optional(),
   reorder_point: z.number().min(0, 'Reorder point cannot be negative'),
   reorder_quantity: z.number().min(1, 'Reorder quantity must be at least 1'),
   ingredients: z.string().optional(),
@@ -41,11 +40,6 @@ interface Category {
   name: string;
 }
 
-interface Supplier {
-  id: string;
-  name: string;
-}
-
 interface AddProductDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -54,7 +48,6 @@ interface AddProductDialogProps {
 
 const AddProductDialog = ({ open, onOpenChange, onProductAdded }: AddProductDialogProps) => {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [benefits, setBenefits] = useState<string[]>([]);
   const [newBenefit, setNewBenefit] = useState('');
   const [productImages, setProductImages] = useState<string[]>([]);
@@ -71,7 +64,6 @@ const AddProductDialog = ({ open, onOpenChange, onProductAdded }: AddProductDial
       stock: 0,
       sku: '',
       category_id: '',
-      supplier_id: '',
       reorder_point: 10,
       reorder_quantity: 50,
       ingredients: '',
@@ -85,7 +77,6 @@ const AddProductDialog = ({ open, onOpenChange, onProductAdded }: AddProductDial
     if (open) {
       console.log('AddProductDialog - Dialog opened, fetching data...');
       fetchCategories();
-      fetchSuppliers();
     }
   }, [open]);
 
@@ -114,32 +105,6 @@ const AddProductDialog = ({ open, onOpenChange, onProductAdded }: AddProductDial
     }
   };
 
-  const fetchSuppliers = async () => {
-    try {
-      console.log('AddProductDialog - Fetching suppliers...');
-      const { data, error } = await supabase
-        .from('suppliers')
-        .select('id, name')
-        .eq('is_active', true)
-        .order('name');
-
-      if (error) {
-        console.error('AddProductDialog - Error fetching suppliers:', error);
-        throw error;
-      }
-      
-      console.log('AddProductDialog - Suppliers fetched:', data);
-      setSuppliers(data || []);
-    } catch (error) {
-      console.error('AddProductDialog - Error in fetchSuppliers:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch suppliers",
-        variant: "destructive",
-      });
-    }
-  };
-
   const addBenefit = () => {
     if (newBenefit.trim() && !benefits.includes(newBenefit.trim())) {
       setBenefits([...benefits, newBenefit.trim()]);
@@ -163,7 +128,6 @@ const AddProductDialog = ({ open, onOpenChange, onProductAdded }: AddProductDial
         stock: data.stock,
         sku: data.sku || null,
         category_id: data.category_id || null,
-        supplier_id: data.supplier_id || null,
         reorder_point: data.reorder_point,
         reorder_quantity: data.reorder_quantity,
         ingredients: data.ingredients || null,
@@ -350,7 +314,7 @@ const AddProductDialog = ({ open, onOpenChange, onProductAdded }: AddProductDial
               />
             </div>
 
-            {/* Category and Supplier */}
+            {/* Category */}
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -379,24 +343,18 @@ const AddProductDialog = ({ open, onOpenChange, onProductAdded }: AddProductDial
 
               <FormField
                 control={form.control}
-                name="supplier_id"
+                name="reorder_quantity"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Supplier</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select supplier" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {suppliers.map((supplier) => (
-                          <SelectItem key={supplier.id} value={supplier.id}>
-                            {supplier.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Reorder Quantity</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="50" 
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 50)}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

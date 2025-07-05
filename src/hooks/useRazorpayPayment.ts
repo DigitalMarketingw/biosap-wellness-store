@@ -93,11 +93,17 @@ export const useRazorpayPayment = () => {
 
       console.log('Razorpay - Order created successfully:', data);
 
-      // Prepare customer info
-      const shipping = order.shipping_address;
-      const customerName = `${shipping.firstName || ''} ${shipping.lastName || ''}`.trim();
-      const customerEmail = shipping.email || '';
-      const customerPhone = shipping.phone || '';
+      // Prepare customer info - safely handle JSON type
+      const shipping = order.shipping_address as any;
+      const customerName = shipping && typeof shipping === 'object' 
+        ? `${shipping.firstName || ''} ${shipping.lastName || ''}`.trim()
+        : '';
+      const customerEmail = shipping && typeof shipping === 'object' 
+        ? shipping.email || ''
+        : '';
+      const customerPhone = shipping && typeof shipping === 'object' 
+        ? shipping.phone || ''
+        : '';
 
       // Razorpay checkout options
       const options: RazorpayPaymentOptions = {
