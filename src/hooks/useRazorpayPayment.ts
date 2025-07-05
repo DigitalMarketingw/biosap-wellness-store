@@ -167,7 +167,8 @@ export const useRazorpayPayment = () => {
       }
 
       console.log('Razorpay - Payment verified successfully');
-      window.location.href = `/payment-success?merchantTransactionId=${response.razorpay_payment_id}`;
+      // Redirect to enhanced thank you page instead of payment success
+      window.location.href = `/thank-you?orderId=${orderId}&merchantTransactionId=${response.razorpay_payment_id}`;
     } catch (error) {
       console.error('Razorpay - Payment verification error:', error);
       window.location.href = `/payment-failed?merchantTransactionId=${response.razorpay_payment_id}&reason=error`;

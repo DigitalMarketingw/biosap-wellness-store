@@ -22,6 +22,7 @@ import Wishlist from "./pages/Wishlist";
 import Checkout from "./pages/Checkout";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentFailed from "./pages/PaymentFailed";
+import ThankYou from "./pages/ThankYou";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
 import CancellationRefund from "./pages/CancellationRefund";
@@ -77,9 +78,10 @@ const App = () => (
                   <Route path="/cancellation-refund" element={<Layout><CancellationRefund /></Layout>} />
                   <Route path="/shipping-delivery" element={<Layout><ShippingDelivery /></Layout>} />
                   
-                  {/* Payment Routes - Razorpay Integration */}
+                  {/* Payment Routes */}
                   <Route path="/payment-success" element={<Layout><PaymentSuccess /></Layout>} />
                   <Route path="/payment-failed" element={<Layout><PaymentFailed /></Layout>} />
+                  <Route path="/thank-you" element={<Layout><ThankYou /></Layout>} />
                   
                   {/* Protected Routes */}
                   <Route path="/profile" element={

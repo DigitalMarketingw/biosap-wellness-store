@@ -164,10 +164,10 @@ const Checkout = () => {
         }
         
         console.log('Checkout - Payment initiated successfully');
-        // The payment modal will handle the rest
+        // The payment modal will handle the rest and redirect to thank you page
         return;
       } else {
-        // Cash on Delivery
+        // Cash on Delivery - redirect to thank you page directly
         console.log('Checkout - COD order placed successfully');
         await clearCart();
 
@@ -176,7 +176,8 @@ const Checkout = () => {
           description: `Your order #${order.id.slice(0, 8)} has been placed`,
         });
 
-        navigate('/');
+        // Redirect to thank you page for COD orders too
+        navigate(`/thank-you?orderId=${order.id}`);
       }
     } catch (error) {
       console.error('Checkout - Error placing order:', error);
