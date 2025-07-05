@@ -1,349 +1,340 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import ProductCard from '@/components/ProductCard';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Search, Filter, X } from 'lucide-react';
-import ProductCard from '@/components/ProductCard';
+
+interface Product {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  image_urls: string[] | null;
+  rating: number | null;
+  review_count: number | null;
+  benefits: string[] | null;
+  is_featured: boolean | null;
+  stock: number;
+  categories?: { name: string };
+  subcategories?: { name: string; slug: string };
+}
+
+interface Category {
+  id: string;
+  name: string;
+}
+
+interface Subcategory {
+  id: string;
+  name: string;
+  slug: string;
+}
 
 const Products = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [priceRange, setPriceRange] = useState([0, 10000]);
-  const [availability, setAvailability] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedSubcategory, setSelectedSubcategory] = useState('');
   const [sortBy, setSortBy] = useState('name');
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Handle URL category parameter
   useEffect(() => {
-    const categoryFromUrl = searchParams.get('category');
-    if (categoryFromUrl && categoryFromUrl !== selectedCategory) {
-      setSelectedCategory(categoryFromUrl);
-    }
-  }, [searchParams]);
+    // Check for URL parameters on mount
+    const categoryParam = searchParams.get('category');
+    const subcategoryParam = searchParams.get('subcategory');
+    const searchParam = searchParams.get('search');
 
-  // Update URL when category changes
+    if (categoryParam) setSelectedCategory(categoryParam);
+    if (subcategoryParam) setSelectedSubcategory(subcategoryParam);
+    if (searchParam) setSearchTerm(searchParam);
+
+    fetchData();
+  }, []);
+
   useEffect(() => {
-    if (selectedCategory !== 'all') {
-      setSearchParams(prev => {
-        const newParams = new URLSearchParams(prev);
-        newParams.set('category', selectedCategory);
-        return newParams;
-      });
-    } else {
-      setSearchParams(prev => {
-        const newParams = new URLSearchParams(prev);
-        newParams.delete('category');
-        return newParams;
-      });
-    }
-  }, [selectedCategory]);
+    fetchProducts();
+  }, [selectedCategory, selectedSubcategory, sortBy]);
 
-  // Fetch products
-  const { data: products, isLoading: productsLoading } = useQuery({
-    queryKey: ['products'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('is_active', true);
-      
-      if (error) throw error;
-      return data;
-    }
-  });
+  useEffect(() => {
+    // Update URL parameters when filters change
+    const params = new URLSearchParams();
+    if (selectedCategory) params.set('category', selectedCategory);
+    if (selectedSubcategory) params.set('subcategory', selectedSubcategory);
+    if (searchTerm) params.set('search', searchTerm);
+    
+    setSearchParams(params);
+  }, [selectedCategory, selectedSubcategory, searchTerm]);
 
-  // Fetch categories
-  const { data: categories } = useQuery({
-    queryKey: ['categories'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*');
-      
-      if (error) throw error;
-      return data;
-    }
-  });
-
-  // Filter and sort products
-  const filteredProducts = useMemo(() => {
-    if (!products) return [];
-
-    let filtered = products.filter(product => {
-      // Search term filter
-      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           product.description?.toLowerCase().includes(searchTerm.toLowerCase());
-
-      // Category filter
-      const matchesCategory = selectedCategory === 'all' || product.category_id === selectedCategory;
-
-      // Price range filter
-      const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
-
-      // Availability filter
-      const matchesAvailability = availability === 'all' || 
-                                 (availability === 'in-stock' && product.stock > 0) ||
-                                 (availability === 'out-of-stock' && product.stock === 0);
-
-      return matchesSearch && matchesCategory && matchesPrice && matchesAvailability;
-    });
-
-    // Sort products
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case 'price-low':
-          return a.price - b.price;
-        case 'price-high':
-          return b.price - a.price;
-        case 'rating':
-          return (b.rating || 0) - (a.rating || 0);
-        case 'name':
-        default:
-          return a.name.localeCompare(b.name);
-      }
-    });
-
-    return filtered;
-  }, [products, searchTerm, selectedCategory, priceRange, availability, sortBy]);
-
-  const clearFilters = () => {
-    setSearchTerm('');
-    setSelectedCategory('all');
-    setPriceRange([0, 10000]);
-    setAvailability('all');
-    setSortBy('name');
+  const fetchData = async () => {
+    await Promise.all([
+      fetchProducts(),
+      fetchCategories(),
+      fetchSubcategories()
+    ]);
+    setLoading(false);
   };
 
-  const activeFiltersCount = [
-    searchTerm,
-    selectedCategory !== 'all' ? selectedCategory : null,
-    priceRange[0] > 0 || priceRange[1] < 10000 ? 'price' : null,
-    availability !== 'all' ? availability : null
-  ].filter(Boolean).length;
+  const fetchProducts = async () => {
+    try {
+      let query = supabase
+        .from('products')
+        .select(`
+          *,
+          categories!products_category_id_fkey(name),
+          subcategories!products_subcategory_id_fkey(name, slug)
+        `)
+        .eq('is_active', true);
+
+      if (selectedCategory) {
+        query = query.eq('category_id', selectedCategory);
+      }
+
+      if (selectedSubcategory) {
+        // Handle both ID and slug matching
+        if (selectedSubcategory.length === 36) { // UUID length
+          query = query.eq('subcategory_id', selectedSubcategory);
+        } else {
+          // Find subcategory by slug
+          const subcategory = subcategories.find(sub => sub.slug === selectedSubcategory);
+          if (subcategory) {
+            query = query.eq('subcategory_id', subcategory.id);
+          }
+        }
+      }
+
+      // Apply sorting
+      switch (sortBy) {
+        case 'price_asc':
+          query = query.order('price', { ascending: true });
+          break;
+        case 'price_desc':
+          query = query.order('price', { ascending: false });
+          break;
+        case 'rating':
+          query = query.order('rating', { ascending: false, nullsLast: true });
+          break;
+        case 'featured':
+          query = query.order('is_featured', { ascending: false }).order('name');
+          break;
+        default:
+          query = query.order('name');
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      setProducts(data || []);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('id, name')
+        .order('name');
+
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
+  const fetchSubcategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('subcategories')
+        .select('id, name, slug')
+        .eq('is_active', true)
+        .order('sort_order');
+
+      if (error) throw error;
+      setSubcategories(data || []);
+    } catch (error) {
+      console.error('Error fetching subcategories:', error);
+    }
+  };
+
+  const filteredProducts = products.filter(product =>
+    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  const clearFilters = () => {
+    setSelectedCategory('');
+    setSelectedSubcategory('');
+    setSearchTerm('');
+    setSortBy('name');
+    setSearchParams({});
+  };
+
+  const activeFiltersCount = [selectedCategory, selectedSubcategory, searchTerm].filter(Boolean).length;
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">Loading products...</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
-      {/* Hero Banner with Product Showcase */}
-      <section className="relative bg-gradient-to-r from-green-600 to-green-800 text-white py-16">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl lg:text-5xl font-bold mb-4">Our Products</h1>
-            <p className="text-xl text-green-100 max-w-2xl mx-auto">
-              Discover our complete range of premium Ayurvedic wellness solutions
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
-            <div className="text-center">
-              <img 
-                src="/lovable-uploads/df78a984-412e-4645-b1d7-1ed1b8aacd7b.png" 
-                alt="SheVital - Women's Wellness Products"
-                className="w-full h-32 object-cover rounded-lg mb-2 opacity-90 hover:opacity-100 transition-opacity"
-              />
-              <p className="text-sm text-green-100">Women's Wellness</p>
-            </div>
-            <div className="text-center">
-              <img 
-                src="/lovable-uploads/1b0830d9-a2f7-49d9-9dbf-f738f13913fc.png" 
-                alt="SmokyGinger - Digestive Health Products"
-                className="w-full h-32 object-cover rounded-lg mb-2 opacity-90 hover:opacity-100 transition-opacity"
-              />
-              <p className="text-sm text-green-100">Digestive Health</p>
-            </div>
-            <div className="text-center">
-              <img 
-                src="/lovable-uploads/1aa37669-de0f-422b-81df-fabede344482.png" 
-                alt="CoolDetox - Natural Detox Products"
-                className="w-full h-32 object-cover rounded-lg mb-2 opacity-90 hover:opacity-100 transition-opacity"
-              />
-              <p className="text-sm text-green-100">Natural Detox</p>
-            </div>
-            <div className="text-center">
-              <img 
-                src="/lovable-uploads/da4caabd-4199-4ec1-b35e-d45a85bb2782.png" 
-                alt="SheVital - Daily Vitality"
-                className="w-full h-32 object-cover rounded-lg mb-2 opacity-90 hover:opacity-100 transition-opacity"
-              />
-              <p className="text-sm text-green-100">Daily Vitality</p>
-            </div>
-          </div>
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Our Products</h1>
+        <p className="text-gray-600">Discover our range of natural Ayurvedic products</p>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white p-6 rounded-lg shadow-sm border mb-8">
+        <div className="flex items-center gap-4 mb-4">
+          <Filter className="h-5 w-5 text-gray-600" />
+          <span className="font-medium text-gray-900">Filters</span>
+          {activeFiltersCount > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={clearFilters}
+              className="ml-auto"
+            >
+              <X className="h-4 w-4 mr-1" />
+              Clear All ({activeFiltersCount})
+            </Button>
+          )}
         </div>
-      </section>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-4 gap-8">
-          {/* Filters Sidebar */}
-          <div className="lg:col-span-1">
-            <Card className="sticky top-4 border-green-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold text-green-800 flex items-center">
-                    <Filter className="h-5 w-5 mr-2" />
-                    Filters
-                  </h3>
-                  {activeFiltersCount > 0 && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={clearFilters}
-                      className="text-green-600 hover:text-green-800"
-                    >
-                      <X className="h-4 w-4 mr-1" />
-                      Clear ({activeFiltersCount})
-                    </Button>
-                  )}
-                </div>
-
-                <div className="space-y-6">
-                  {/* Search */}
-                  <div>
-                    <label className="text-sm font-medium text-green-800 mb-2 block">
-                      Search Products
-                    </label>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-green-500 h-4 w-4" />
-                      <Input
-                        placeholder="Search by name or description..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 border-green-200 focus:border-green-400"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Category Filter */}
-                  <div>
-                    <label className="text-sm font-medium text-green-800 mb-2 block">
-                      Category
-                    </label>
-                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                      <SelectTrigger className="border-green-200 focus:border-green-400">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Categories</SelectItem>
-                        {categories?.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Price Range */}
-                  <div>
-                    <label className="text-sm font-medium text-green-800 mb-2 block">
-                      Price Range
-                    </label>
-                    <div className="px-2">
-                      <Slider
-                        value={priceRange}
-                        onValueChange={setPriceRange}
-                        max={10000}
-                        min={0}
-                        step={100}
-                        className="w-full"
-                      />
-                      <div className="flex justify-between text-sm text-green-600 mt-2">
-                        <span>₹{priceRange[0].toLocaleString()}</span>
-                        <span>₹{priceRange[1].toLocaleString()}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Availability */}
-                  <div>
-                    <label className="text-sm font-medium text-green-800 mb-2 block">
-                      Availability
-                    </label>
-                    <Select value={availability} onValueChange={setAvailability}>
-                      <SelectTrigger className="border-green-200 focus:border-green-400">
-                        <SelectValue placeholder="Select availability" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Products</SelectItem>
-                        <SelectItem value="in-stock">In Stock</SelectItem>
-                        <SelectItem value="out-of-stock">Out of Stock</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search products..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
 
-          {/* Products Grid */}
-          <div className="lg:col-span-3">
-            {/* Sort and Results Count */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
-              <div className="text-green-700">
-                {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} found
-                {activeFiltersCount > 0 && (
-                  <Badge variant="secondary" className="ml-2 bg-green-100 text-green-700">
-                    {activeFiltersCount} filter{activeFiltersCount !== 1 ? 's' : ''} applied
-                  </Badge>
-                )}
-              </div>
-              
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-48 border-green-200 focus:border-green-400">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="name">Name (A-Z)</SelectItem>
-                  <SelectItem value="price-low">Price (Low to High)</SelectItem>
-                  <SelectItem value="price-high">Price (High to Low)</SelectItem>
-                  <SelectItem value="rating">Highest Rated</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          {/* Category Filter */}
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger>
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Categories</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-            {/* Products Grid */}
-            {productsLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[...Array(6)].map((_, i) => (
-                  <Card key={i} className="animate-pulse">
-                    <CardContent className="p-4">
-                      <div className="bg-green-200 h-48 rounded mb-4"></div>
-                      <div className="bg-green-200 h-4 rounded mb-2"></div>
-                      <div className="bg-green-200 h-3 rounded mb-4"></div>
-                      <div className="bg-green-200 h-6 rounded"></div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : filteredProducts.length === 0 ? (
-              <Card className="border-green-200">
-                <CardContent className="p-12 text-center">
-                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Search className="h-8 w-8 text-green-600" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-green-800 mb-2">No products found</h3>
-                  <p className="text-green-600 mb-4">
-                    Try adjusting your filters or search terms to find what you're looking for.
-                  </p>
-                  <Button onClick={clearFilters} className="bg-green-600 hover:bg-green-700">
-                    Clear all filters
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
+          {/* Subcategory Filter */}
+          <Select value={selectedSubcategory} onValueChange={setSelectedSubcategory}>
+            <SelectTrigger>
+              <SelectValue placeholder="All Subcategories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Subcategories</SelectItem>
+              {subcategories.map((subcategory) => (
+                <SelectItem key={subcategory.id} value={subcategory.id}>
+                  {subcategory.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Sort */}
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger>
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Name (A-Z)</SelectItem>
+              <SelectItem value="price_asc">Price (Low to High)</SelectItem>
+              <SelectItem value="price_desc">Price (High to Low)</SelectItem>
+              <SelectItem value="rating">Rating</SelectItem>
+              <SelectItem value="featured">Featured First</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Active Filters Display */}
+        {activeFiltersCount > 0 && (
+          <div className="flex flex-wrap gap-2 mt-4">
+            {selectedCategory && (
+              <Badge variant="secondary" className="px-3 py-1">
+                Category: {categories.find(c => c.id === selectedCategory)?.name}
+                <X 
+                  className="h-3 w-3 ml-2 cursor-pointer" 
+                  onClick={() => setSelectedCategory('')}
+                />
+              </Badge>
+            )}
+            {selectedSubcategory && (
+              <Badge variant="secondary" className="px-3 py-1">
+                Wellness: {subcategories.find(s => s.id === selectedSubcategory || s.slug === selectedSubcategory)?.name}
+                <X 
+                  className="h-3 w-3 ml-2 cursor-pointer" 
+                  onClick={() => setSelectedSubcategory('')}
+                />
+              </Badge>
+            )}
+            {searchTerm && (
+              <Badge variant="secondary" className="px-3 py-1">
+                Search: "{searchTerm}"
+                <X 
+                  className="h-3 w-3 ml-2 cursor-pointer" 
+                  onClick={() => setSearchTerm('')}
+                />
+              </Badge>
             )}
           </div>
-        </div>
+        )}
       </div>
+
+      {/* Results */}
+      <div className="mb-6">
+        <p className="text-gray-600">
+          Showing {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''}
+          {activeFiltersCount > 0 && ' matching your filters'}
+        </p>
+      </div>
+
+      {/* Products Grid */}
+      {filteredProducts.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="text-gray-500 mb-4">
+            {searchTerm || selectedCategory || selectedSubcategory 
+              ? 'No products found matching your criteria.' 
+              : 'No products available at the moment.'
+            }
+          </div>
+          {activeFiltersCount > 0 && (
+            <Button onClick={clearFilters} variant="outline">
+              Clear Filters
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredProducts.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      )}
     </div>
   );
 };
