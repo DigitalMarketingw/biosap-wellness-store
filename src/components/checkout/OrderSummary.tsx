@@ -22,7 +22,7 @@ interface OrderSummaryProps {
   totalPrice: number;
   paymentMethod: string;
   isProcessing: boolean;
-  isPhonePeProcessing: boolean;
+  isRazorpayProcessing: boolean;
   onSubmit: () => void;
 }
 
@@ -31,7 +31,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   totalPrice,
   paymentMethod,
   isProcessing,
-  isPhonePeProcessing,
+  isRazorpayProcessing,
   onSubmit
 }) => {
   return (
@@ -68,10 +68,10 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
         
         <Button
           onClick={onSubmit}
-          disabled={isProcessing || isPhonePeProcessing}
+          disabled={isProcessing || isRazorpayProcessing}
           className="w-full bg-green-600 hover:bg-green-700 text-white"
         >
-          {isProcessing || isPhonePeProcessing 
+          {isProcessing || isRazorpayProcessing 
             ? (paymentMethod === 'online' ? 'Processing Payment...' : 'Processing Order...') 
             : (paymentMethod === 'online' ? 'Pay with Razorpay' : 'Place Order')
           }

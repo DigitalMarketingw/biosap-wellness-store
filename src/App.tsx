@@ -77,7 +77,7 @@ const App = () => (
                   <Route path="/cancellation-refund" element={<Layout><CancellationRefund /></Layout>} />
                   <Route path="/shipping-delivery" element={<Layout><ShippingDelivery /></Layout>} />
                   
-                  {/* Payment Routes - Updated for PhonePe PG */}
+                  {/* Payment Routes - Razorpay Integration */}
                   <Route path="/payment-success" element={<Layout><PaymentSuccess /></Layout>} />
                   <Route path="/payment-failed" element={<Layout><PaymentFailed /></Layout>} />
                   

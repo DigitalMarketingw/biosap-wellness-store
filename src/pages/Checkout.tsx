@@ -234,7 +234,7 @@ const Checkout = () => {
             totalPrice={getTotalPrice()}
             paymentMethod={paymentMethod}
             isProcessing={isProcessing}
-            isPhonePeProcessing={isRazorpayProcessing}
+            isRazorpayProcessing={isRazorpayProcessing}
             onSubmit={handlePlaceOrder}
           />
         </div>
