@@ -1,27 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAdmin } from '@/contexts/AdminContext';
 import ImageUpload from './ImageUpload';
-
-interface Category {
-  id: string;
-  name: string;
-}
-
-interface Subcategory {
-  id: string;
-  name: string;
-  category_id: string | null;
-}
+import { Loader2 } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -30,10 +20,10 @@ interface Product {
   price: number;
   stock: number;
   sku: string;
-  category_id: string;
-  subcategory_id: string | null;
-  is_featured: boolean;
   is_active: boolean;
+  is_featured: boolean;
+  category_id: string;
+  supplier_id: string | null;
   reorder_point: number;
   reorder_quantity: number;
   image_urls: string[];
@@ -53,75 +43,60 @@ const EditProductDialog: React.FC<EditProductDialogProps> = ({
   open,
   onOpenChange,
   product,
-  onProductUpdated,
+  onProductUpdated
 }) => {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
-  const [filteredSubcategories, setFilteredSubcategories] = useState<Subcategory[]>([]);
+  const { toast } = useToast();
+  const { logAdminActivity } = useAdmin();
   const [loading, setLoading] = useState(false);
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [suppliers, setSuppliers] = useState<any[]>([]);
+  
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     price: '',
     stock: '',
     sku: '',
-    category_id: '',
-    subcategory_id: '',
-    is_featured: false,
     is_active: true,
-    reorder_point: '10',
-    reorder_quantity: '50',
+    is_featured: false,
+    category_id: '',
+    supplier_id: '',
+    reorder_point: '',
+    reorder_quantity: '',
+    image_urls: [] as string[],
     ingredients: '',
     usage_instructions: '',
-    benefits: ''
+    benefits: '' as string
   });
 
-  const { toast } = useToast();
-  const { logAdminActivity } = useAdmin();
+  useEffect(() => {
+    if (product && open) {
+      setFormData({
+        name: product.name || '',
+        description: product.description || '',
+        price: product.price.toString(),
+        stock: product.stock.toString(),
+        sku: product.sku || '',
+        is_active: product.is_active,
+        is_featured: product.is_featured,
+        category_id: product.category_id || '',
+        supplier_id: product.supplier_id || '',
+        reorder_point: product.reorder_point.toString(),
+        reorder_quantity: product.reorder_quantity.toString(),
+        image_urls: product.image_urls || [],
+        ingredients: product.ingredients || '',
+        usage_instructions: product.usage_instructions || '',
+        benefits: Array.isArray(product.benefits) ? product.benefits.join(', ') : ''
+      });
+    }
+  }, [product, open]);
 
   useEffect(() => {
     if (open) {
       fetchCategories();
-      fetchSubcategories();
+      fetchSuppliers();
     }
   }, [open]);
-
-  useEffect(() => {
-    if (product) {
-      setFormData({
-        name: product.name,
-        description: product.description || '',
-        price: product.price.toString(),
-        stock: product.stock?.toString() || '0',
-        sku: product.sku || '',
-        category_id: product.category_id || '',
-        subcategory_id: product.subcategory_id || '',
-        is_featured: product.is_featured,
-        is_active: product.is_active,
-        reorder_point: product.reorder_point?.toString() || '10',
-        reorder_quantity: product.reorder_quantity?.toString() || '50',
-        ingredients: product.ingredients || '',
-        usage_instructions: product.usage_instructions || '',
-        benefits: product.benefits?.join('\n') || ''
-      });
-      setImageUrls(product.image_urls || []);
-    }
-  }, [product]);
-
-  useEffect(() => {
-    // Filter subcategories based on selected category
-    if (formData.category_id) {
-      const filtered = subcategories.filter(sub => sub.category_id === formData.category_id);
-      setFilteredSubcategories(filtered);
-    } else {
-      setFilteredSubcategories(subcategories);
-    }
-    // Reset subcategory selection when category changes
-    if (formData.subcategory_id && !filteredSubcategories.find(sub => sub.id === formData.subcategory_id)) {
-      setFormData(prev => ({ ...prev, subcategory_id: '' }));
-    }
-  }, [formData.category_id, subcategories]);
 
   const fetchCategories = async () => {
     try {
@@ -129,7 +104,7 @@ const EditProductDialog: React.FC<EditProductDialogProps> = ({
         .from('categories')
         .select('id, name')
         .order('name');
-
+      
       if (error) throw error;
       setCategories(data || []);
     } catch (error) {
@@ -137,60 +112,70 @@ const EditProductDialog: React.FC<EditProductDialogProps> = ({
     }
   };
 
-  const fetchSubcategories = async () => {
+  const fetchSuppliers = async () => {
     try {
       const { data, error } = await supabase
-        .from('subcategories')
-        .select('id, name, category_id')
+        .from('suppliers')
+        .select('id, name')
         .eq('is_active', true)
-        .order('sort_order');
-
+        .order('name');
+      
       if (error) throw error;
-      setSubcategories(data || []);
+      setSuppliers(data || []);
     } catch (error) {
-      console.error('Error fetching subcategories:', error);
+      console.error('Error fetching suppliers:', error);
     }
   };
+
+  useEffect(() => {
+    if (open) {
+      fetchCategories();
+      fetchSuppliers();
+    }
+  }, [open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!product) return;
-
+    
     setLoading(true);
 
     try {
       const benefitsArray = formData.benefits
-        .split('\n')
-        .map(benefit => benefit.trim())
-        .filter(benefit => benefit.length > 0);
+        ? formData.benefits.split(',').map(b => b.trim()).filter(b => b)
+        : [];
 
-      const productData = {
+      const updateData = {
         name: formData.name,
         description: formData.description || null,
         price: parseFloat(formData.price),
-        stock: parseInt(formData.stock) || 0,
+        stock: parseInt(formData.stock),
         sku: formData.sku || null,
-        category_id: formData.category_id || null,
-        subcategory_id: formData.subcategory_id || null,
-        is_featured: formData.is_featured,
         is_active: formData.is_active,
-        reorder_point: parseInt(formData.reorder_point) || 10,
-        reorder_quantity: parseInt(formData.reorder_quantity) || 50,
-        image_urls: imageUrls.length > 0 ? imageUrls : null,
+        is_featured: formData.is_featured,
+        category_id: formData.category_id || null,
+        supplier_id: formData.supplier_id || null,
+        reorder_point: parseInt(formData.reorder_point),
+        reorder_quantity: parseInt(formData.reorder_quantity),
+        image_urls: formData.image_urls,
         ingredients: formData.ingredients || null,
         usage_instructions: formData.usage_instructions || null,
-        benefits: benefitsArray.length > 0 ? benefitsArray : null,
+        benefits: benefitsArray,
+        updated_at: new Date().toISOString()
       };
 
       const { error } = await supabase
         .from('products')
-        .update(productData)
+        .update(updateData)
         .eq('id', product.id);
 
       if (error) throw error;
 
-      await logAdminActivity('update', 'products', product.id);
-      
+      await logAdminActivity('update', 'products', product.id, { 
+        action: 'product updated',
+        changes: updateData 
+      });
+
       toast({
         title: "Success",
         description: "Product updated successfully",
@@ -198,11 +183,11 @@ const EditProductDialog: React.FC<EditProductDialogProps> = ({
 
       onProductUpdated();
       onOpenChange(false);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error updating product:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to update product",
+        description: "Failed to update product",
         variant: "destructive",
       });
     } finally {
@@ -210,76 +195,73 @@ const EditProductDialog: React.FC<EditProductDialogProps> = ({
     }
   };
 
+  const handleBenefitsChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      benefits: value
+    }));
+  };
+
   if (!product) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Product</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
               <Label htmlFor="name">Product Name *</Label>
               <Input
                 id="name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                 required
               />
             </div>
-            <div>
+
+            <div className="space-y-2">
               <Label htmlFor="sku">SKU</Label>
               <Input
                 id="sku"
                 value={formData.sku}
-                onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                placeholder="Product SKU"
+                onChange={(e) => setFormData(prev => ({ ...prev, sku: e.target.value }))}
               />
             </div>
-          </div>
 
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={3}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="price">Price *</Label>
               <Input
                 id="price"
                 type="number"
                 step="0.01"
+                min="0"
                 value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
                 required
               />
             </div>
-            <div>
-              <Label htmlFor="stock">Stock Quantity</Label>
+
+            <div className="space-y-2">
+              <Label htmlFor="stock">Stock Quantity *</Label>
               <Input
                 id="stock"
                 type="number"
+                min="0"
                 value={formData.stock}
-                onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, stock: e.target.value }))}
+                required
               />
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="category">Category</Label>
               <Select
                 value={formData.category_id}
-                onValueChange={(value) => setFormData({ ...formData, category_id: value })}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, category_id: value }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
@@ -293,126 +275,125 @@ const EditProductDialog: React.FC<EditProductDialogProps> = ({
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label htmlFor="subcategory">Subcategory</Label>
+
+            <div className="space-y-2">
+              <Label htmlFor="supplier">Supplier</Label>
               <Select
-                value={formData.subcategory_id}
-                onValueChange={(value) => setFormData({ ...formData, subcategory_id: value })}
+                value={formData.supplier_id}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, supplier_id: value }))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select subcategory" />
+                  <SelectValue placeholder="Select supplier" />
                 </SelectTrigger>
                 <SelectContent>
-                  {filteredSubcategories.map((subcategory) => (
-                    <SelectItem key={subcategory.id} value={subcategory.id}>
-                      {subcategory.name}
+                  {suppliers.map((supplier) => (
+                    <SelectItem key={supplier.id} value={supplier.id}>
+                      {supplier.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="reorder_point">Reorder Point</Label>
               <Input
                 id="reorder_point"
                 type="number"
+                min="0"
                 value={formData.reorder_point}
-                onChange={(e) => setFormData({ ...formData, reorder_point: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, reorder_point: e.target.value }))}
               />
             </div>
-            <div>
+
+            <div className="space-y-2">
               <Label htmlFor="reorder_quantity">Reorder Quantity</Label>
               <Input
                 id="reorder_quantity"
                 type="number"
+                min="0"
                 value={formData.reorder_quantity}
-                onChange={(e) => setFormData({ ...formData, reorder_quantity: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, reorder_quantity: e.target.value }))}
               />
             </div>
           </div>
 
-          <div>
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="ingredients">Ingredients</Label>
             <Textarea
               id="ingredients"
               value={formData.ingredients}
-              onChange={(e) => setFormData({ ...formData, ingredients: e.target.value })}
+              onChange={(e) => setFormData(prev => ({ ...prev, ingredients: e.target.value }))}
               rows={2}
-              placeholder="List the main ingredients..."
             />
           </div>
 
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="usage_instructions">Usage Instructions</Label>
             <Textarea
               id="usage_instructions"
               value={formData.usage_instructions}
-              onChange={(e) => setFormData({ ...formData, usage_instructions: e.target.value })}
+              onChange={(e) => setFormData(prev => ({ ...prev, usage_instructions: e.target.value }))}
               rows={2}
-              placeholder="How to use this product..."
             />
           </div>
 
-          <div>
-            <Label htmlFor="benefits">Benefits (one per line)</Label>
-            <Textarea
+          <div className="space-y-2">
+            <Label htmlFor="benefits">Benefits (comma-separated)</Label>
+            <Input
               id="benefits"
               value={formData.benefits}
-              onChange={(e) => setFormData({ ...formData, benefits: e.target.value })}
-              rows={3}
-              placeholder="Benefit 1&#10;Benefit 2&#10;Benefit 3"
+              onChange={(e) => handleBenefitsChange(e.target.value)}
+              placeholder="e.g., Stress relief, Better sleep, Improved digestion"
             />
           </div>
 
-          <div>
+          <div className="space-y-4">
             <Label>Product Images</Label>
             <ImageUpload
-              images={imageUrls}
-              onImagesChange={setImageUrls}
-              maxImages={5}
+              images={formData.image_urls}
+              onImagesChange={(images) => setFormData(prev => ({ ...prev, image_urls: images }))}
+              maxImages={6}
             />
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-6">
             <div className="flex items-center space-x-2">
-              <Checkbox
-                id="is_featured"
-                checked={formData.is_featured}
-                onCheckedChange={(checked) => 
-                  setFormData({ ...formData, is_featured: checked as boolean })
-                }
-              />
-              <Label htmlFor="is_featured">Featured Product</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
+              <Switch
                 id="is_active"
                 checked={formData.is_active}
-                onCheckedChange={(checked) => 
-                  setFormData({ ...formData, is_active: checked as boolean })
-                }
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked }))}
               />
               <Label htmlFor="is_active">Active</Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="is_featured"
+                checked={formData.is_featured}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_featured: checked }))}
+              />
+              <Label htmlFor="is_featured">Featured</Label>
             </div>
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={loading}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              {loading ? 'Updating...' : 'Update Product'}
+            <Button type="submit" disabled={loading} className="bg-green-600 hover:bg-green-700">
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Update Product
             </Button>
           </div>
         </form>

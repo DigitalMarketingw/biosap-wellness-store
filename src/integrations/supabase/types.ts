@@ -493,7 +493,7 @@ export type Database = {
           review_count: number | null
           sku: string | null
           stock: number | null
-          subcategory_id: string | null
+          supplier_id: string | null
           updated_at: string | null
           usage_instructions: string | null
         }
@@ -515,7 +515,7 @@ export type Database = {
           review_count?: number | null
           sku?: string | null
           stock?: number | null
-          subcategory_id?: string | null
+          supplier_id?: string | null
           updated_at?: string | null
           usage_instructions?: string | null
         }
@@ -537,7 +537,7 @@ export type Database = {
           review_count?: number | null
           sku?: string | null
           stock?: number | null
-          subcategory_id?: string | null
+          supplier_id?: string | null
           updated_at?: string | null
           usage_instructions?: string | null
         }
@@ -550,10 +550,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "products_subcategory_id_fkey"
-            columns: ["subcategory_id"]
+            foreignKeyName: "products_supplier_id_fkey"
+            columns: ["supplier_id"]
             isOneToOne: false
-            referencedRelation: "subcategories"
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
         ]
@@ -669,52 +669,50 @@ export type Database = {
         }
         Relationships: []
       }
-      subcategories: {
+      suppliers: {
         Row: {
-          category_id: string | null
+          address: Json | null
+          contact_person: string | null
           created_at: string
-          description: string | null
+          email: string | null
           id: string
-          image_url: string | null
           is_active: boolean | null
           name: string
-          slug: string
-          sort_order: number | null
+          notes: string | null
+          payment_terms: string | null
+          phone: string | null
+          tax_id: string | null
           updated_at: string
         }
         Insert: {
-          category_id?: string | null
+          address?: Json | null
+          contact_person?: string | null
           created_at?: string
-          description?: string | null
+          email?: string | null
           id?: string
-          image_url?: string | null
           is_active?: boolean | null
           name: string
-          slug: string
-          sort_order?: number | null
+          notes?: string | null
+          payment_terms?: string | null
+          phone?: string | null
+          tax_id?: string | null
           updated_at?: string
         }
         Update: {
-          category_id?: string | null
+          address?: Json | null
+          contact_person?: string | null
           created_at?: string
-          description?: string | null
+          email?: string | null
           id?: string
-          image_url?: string | null
           is_active?: boolean | null
           name?: string
-          slug?: string
-          sort_order?: number | null
+          notes?: string | null
+          payment_terms?: string | null
+          phone?: string | null
+          tax_id?: string | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "subcategories_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       system_settings: {
         Row: {

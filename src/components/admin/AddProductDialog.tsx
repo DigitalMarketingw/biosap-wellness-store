@@ -6,21 +6,44 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAdmin } from '@/contexts/AdminContext';
+import { X, Plus } from 'lucide-react';
 import ImageUpload from './ImageUpload';
+
+const productSchema = z.object({
+  name: z.string().min(1, 'Product name is required'),
+  description: z.string().optional(),
+  price: z.number().min(0.01, 'Price must be greater than 0'),
+  stock: z.number().min(0, 'Stock cannot be negative'),
+  sku: z.string().optional(),
+  category_id: z.string().optional(),
+  supplier_id: z.string().optional(),
+  reorder_point: z.number().min(0, 'Reorder point cannot be negative'),
+  reorder_quantity: z.number().min(1, 'Reorder quantity must be at least 1'),
+  ingredients: z.string().optional(),
+  usage_instructions: z.string().optional(),
+  is_featured: z.boolean(),
+  is_active: z.boolean(),
+});
+
+type ProductFormData = z.infer<typeof productSchema>;
 
 interface Category {
   id: string;
   name: string;
 }
 
-interface Subcategory {
+interface Supplier {
   id: string;
   name: string;
-  category_id: string | null;
 }
 
 interface AddProductDialogProps {
@@ -29,155 +52,169 @@ interface AddProductDialogProps {
   onProductAdded: () => void;
 }
 
-const AddProductDialog: React.FC<AddProductDialogProps> = ({
-  open,
-  onOpenChange,
-  onProductAdded,
-}) => {
+const AddProductDialog = ({ open, onOpenChange, onProductAdded }: AddProductDialogProps) => {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
-  const [filteredSubcategories, setFilteredSubcategories] = useState<Subcategory[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [benefits, setBenefits] = useState<string[]>([]);
+  const [newBenefit, setNewBenefit] = useState('');
+  const [productImages, setProductImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    price: '',
-    stock: '',
-    sku: '',
-    category_id: '',
-    subcategory_id: '',
-    is_featured: false,
-    is_active: true,
-    reorder_point: '10',
-    reorder_quantity: '50',
-    ingredients: '',
-    usage_instructions: '',
-    benefits: ''
-  });
-
   const { toast } = useToast();
   const { logAdminActivity } = useAdmin();
 
+  const form = useForm<ProductFormData>({
+    resolver: zodResolver(productSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+      price: 0,
+      stock: 0,
+      sku: '',
+      category_id: '',
+      supplier_id: '',
+      reorder_point: 10,
+      reorder_quantity: 50,
+      ingredients: '',
+      usage_instructions: '',
+      is_featured: false,
+      is_active: true,
+    },
+  });
+
   useEffect(() => {
     if (open) {
+      console.log('AddProductDialog - Dialog opened, fetching data...');
       fetchCategories();
-      fetchSubcategories();
+      fetchSuppliers();
     }
   }, [open]);
 
-  useEffect(() => {
-    // Filter subcategories based on selected category
-    if (formData.category_id) {
-      const filtered = subcategories.filter(sub => sub.category_id === formData.category_id);
-      setFilteredSubcategories(filtered);
-    } else {
-      setFilteredSubcategories(subcategories);
-    }
-    // Reset subcategory selection when category changes
-    if (formData.subcategory_id && !filteredSubcategories.find(sub => sub.id === formData.subcategory_id)) {
-      setFormData(prev => ({ ...prev, subcategory_id: '' }));
-    }
-  }, [formData.category_id, subcategories]);
-
   const fetchCategories = async () => {
     try {
+      console.log('AddProductDialog - Fetching categories...');
       const { data, error } = await supabase
         .from('categories')
         .select('id, name')
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('AddProductDialog - Error fetching categories:', error);
+        throw error;
+      }
+      
+      console.log('AddProductDialog - Categories fetched:', data);
       setCategories(data || []);
     } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
-  };
-
-  const fetchSubcategories = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('subcategories')
-        .select('id, name, category_id')
-        .eq('is_active', true)
-        .order('sort_order');
-
-      if (error) throw error;
-      setSubcategories(data || []);
-    } catch (error) {
-      console.error('Error fetching subcategories:', error);
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      description: '',
-      price: '',
-      stock: '',
-      sku: '',
-      category_id: '',
-      subcategory_id: '',
-      is_featured: false,
-      is_active: true,
-      reorder_point: '10',
-      reorder_quantity: '50',
-      ingredients: '',
-      usage_instructions: '',
-      benefits: ''
-    });
-    setImageUrls([]);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const benefitsArray = formData.benefits
-        .split('\n')
-        .map(benefit => benefit.trim())
-        .filter(benefit => benefit.length > 0);
-
-      const productData = {
-        name: formData.name,
-        description: formData.description || null,
-        price: parseFloat(formData.price),
-        stock: parseInt(formData.stock) || 0,
-        sku: formData.sku || null,
-        category_id: formData.category_id || null,
-        subcategory_id: formData.subcategory_id || null,
-        is_featured: formData.is_featured,
-        is_active: formData.is_active,
-        reorder_point: parseInt(formData.reorder_point) || 10,
-        reorder_quantity: parseInt(formData.reorder_quantity) || 50,
-        image_urls: imageUrls.length > 0 ? imageUrls : null,
-        ingredients: formData.ingredients || null,
-        usage_instructions: formData.usage_instructions || null,
-        benefits: benefitsArray.length > 0 ? benefitsArray : null,
-      };
-
-      const { error } = await supabase
-        .from('products')
-        .insert([productData]);
-
-      if (error) throw error;
-
-      await logAdminActivity('create', 'products');
-      
-      toast({
-        title: "Success",
-        description: "Product added successfully",
-      });
-
-      resetForm();
-      onProductAdded();
-      onOpenChange(false);
-    } catch (error: any) {
-      console.error('Error adding product:', error);
+      console.error('AddProductDialog - Error in fetchCategories:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to add product",
+        description: "Failed to fetch categories",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchSuppliers = async () => {
+    try {
+      console.log('AddProductDialog - Fetching suppliers...');
+      const { data, error } = await supabase
+        .from('suppliers')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) {
+        console.error('AddProductDialog - Error fetching suppliers:', error);
+        throw error;
+      }
+      
+      console.log('AddProductDialog - Suppliers fetched:', data);
+      setSuppliers(data || []);
+    } catch (error) {
+      console.error('AddProductDialog - Error in fetchSuppliers:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch suppliers",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const addBenefit = () => {
+    if (newBenefit.trim() && !benefits.includes(newBenefit.trim())) {
+      setBenefits([...benefits, newBenefit.trim()]);
+      setNewBenefit('');
+    }
+  };
+
+  const removeBenefit = (benefit: string) => {
+    setBenefits(benefits.filter(b => b !== benefit));
+  };
+
+  const onSubmit = async (data: ProductFormData) => {
+    console.log('AddProductDialog - Form submission started with data:', data);
+    setLoading(true);
+    
+    try {
+      const productData = {
+        name: data.name,
+        description: data.description || null,
+        price: data.price,
+        stock: data.stock,
+        sku: data.sku || null,
+        category_id: data.category_id || null,
+        supplier_id: data.supplier_id || null,
+        reorder_point: data.reorder_point,
+        reorder_quantity: data.reorder_quantity,
+        ingredients: data.ingredients || null,
+        usage_instructions: data.usage_instructions || null,
+        benefits: benefits.length > 0 ? benefits : null,
+        image_urls: productImages.length > 0 ? productImages : null,
+        is_featured: data.is_featured,
+        is_active: data.is_active,
+      };
+
+      console.log('AddProductDialog - Prepared product data:', productData);
+
+      const { data: product, error } = await supabase
+        .from('products')
+        .insert(productData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('AddProductDialog - Supabase insert error:', error);
+        throw error;
+      }
+
+      console.log('AddProductDialog - Product created successfully:', product);
+
+      await logAdminActivity('create', 'products', product.id, { name: data.name });
+
+      toast({
+        title: "Success",
+        description: "Product created successfully",
+      });
+
+      form.reset();
+      setBenefits([]);
+      setProductImages([]);
+      onProductAdded();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('AddProductDialog - Error creating product:', error);
+      
+      // More detailed error message
+      let errorMessage = "Failed to create product";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null && 'message' in error) {
+        errorMessage = String((error as any).message);
+      }
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -187,208 +224,298 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New Product</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="name">Product Name *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Basic Information */}
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Product Name *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter product name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div>
-              <Label htmlFor="sku">SKU</Label>
-              <Input
-                id="sku"
-                value={formData.sku}
-                onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                placeholder="Product SKU"
-              />
-            </div>
-          </div>
 
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={3}
+              <FormField
+                control={form.control}
+                name="sku"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>SKU</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter SKU" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Enter product description" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
+            {/* Product Images */}
             <div>
-              <Label htmlFor="price">Price *</Label>
-              <Input
-                id="price"
-                type="number"
-                step="0.01"
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                required
+              <Label className="text-base font-semibold">Product Images</Label>
+              <p className="text-sm text-gray-600 mb-4">
+                Upload up to 6 high-quality images. Images will be automatically optimized for fast loading.
+              </p>
+              <ImageUpload
+                images={productImages}
+                onImagesChange={setProductImages}
+                maxImages={6}
               />
             </div>
-            <div>
-              <Label htmlFor="stock">Stock Quantity</Label>
-              <Input
-                id="stock"
-                type="number"
-                value={formData.stock}
-                onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+
+            {/* Pricing and Inventory */}
+            <div className="grid grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="price"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Price (₹) *</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        step="0.01" 
+                        placeholder="0.00" 
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="stock"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Stock *</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="0" 
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="reorder_point"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Reorder Point</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="10" 
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 10)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
+            {/* Category and Supplier */}
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="category_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {categories.map((category) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="supplier_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Supplier</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select supplier" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {suppliers.map((supplier) => (
+                          <SelectItem key={supplier.id} value={supplier.id}>
+                            {supplier.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Benefits */}
             <div>
-              <Label htmlFor="category">Category</Label>
-              <Select
-                value={formData.category_id}
-                onValueChange={(value) => setFormData({ ...formData, category_id: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
+              <Label>Benefits</Label>
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Add a benefit"
+                    value={newBenefit}
+                    onChange={(e) => setNewBenefit(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addBenefit())}
+                  />
+                  <Button type="button" onClick={addBenefit} size="sm">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {benefits.map((benefit, index) => (
+                    <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                      {benefit}
+                      <X 
+                        className="h-3 w-3 cursor-pointer" 
+                        onClick={() => removeBenefit(benefit)}
+                      />
+                    </Badge>
                   ))}
-                </SelectContent>
-              </Select>
+                </div>
+              </div>
             </div>
-            <div>
-              <Label htmlFor="subcategory">Subcategory</Label>
-              <Select
-                value={formData.subcategory_id}
-                onValueChange={(value) => setFormData({ ...formData, subcategory_id: value })}
+
+            {/* Additional Details */}
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="ingredients"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Ingredients</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="List ingredients" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="usage_instructions"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Usage Instructions</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Enter usage instructions" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Switches */}
+            <div className="flex gap-8">
+              <FormField
+                control={form.control}
+                name="is_featured"
+                render={({ field }) => (
+                  <FormItem className="flex items-center space-x-2">
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormLabel>Featured Product</FormLabel>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="is_active"
+                render={({ field }) => (
+                  <FormItem className="flex items-center space-x-2">
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormLabel>Active</FormLabel>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Form Actions */}
+            <div className="flex justify-end gap-2 pt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => onOpenChange(false)}
+                disabled={loading}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select subcategory" />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredSubcategories.map((subcategory) => (
-                    <SelectItem key={subcategory.id} value={subcategory.id}>
-                      {subcategory.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Creating...' : 'Create Product'}
+              </Button>
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="reorder_point">Reorder Point</Label>
-              <Input
-                id="reorder_point"
-                type="number"
-                value={formData.reorder_point}
-                onChange={(e) => setFormData({ ...formData, reorder_point: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="reorder_quantity">Reorder Quantity</Label>
-              <Input
-                id="reorder_quantity"
-                type="number"
-                value={formData.reorder_quantity}
-                onChange={(e) => setFormData({ ...formData, reorder_quantity: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="ingredients">Ingredients</Label>
-            <Textarea
-              id="ingredients"
-              value={formData.ingredients}
-              onChange={(e) => setFormData({ ...formData, ingredients: e.target.value })}
-              rows={2}
-              placeholder="List the main ingredients..."
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="usage_instructions">Usage Instructions</Label>
-            <Textarea
-              id="usage_instructions"
-              value={formData.usage_instructions}
-              onChange={(e) => setFormData({ ...formData, usage_instructions: e.target.value })}
-              rows={2}
-              placeholder="How to use this product..."
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="benefits">Benefits (one per line)</Label>
-            <Textarea
-              id="benefits"
-              value={formData.benefits}
-              onChange={(e) => setFormData({ ...formData, benefits: e.target.value })}
-              rows={3}
-              placeholder="Benefit 1&#10;Benefit 2&#10;Benefit 3"
-            />
-          </div>
-
-          <div>
-            <Label>Product Images</Label>
-            <ImageUpload
-              images={imageUrls}
-              onImagesChange={setImageUrls}
-              maxImages={5}
-            />
-          </div>
-
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="is_featured"
-                checked={formData.is_featured}
-                onCheckedChange={(checked) => 
-                  setFormData({ ...formData, is_featured: checked as boolean })
-                }
-              />
-              <Label htmlFor="is_featured">Featured Product</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="is_active"
-                checked={formData.is_active}
-                onCheckedChange={(checked) => 
-                  setFormData({ ...formData, is_active: checked as boolean })
-                }
-              />
-              <Label htmlFor="is_active">Active</Label>
-            </div>
-          </div>
-
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={loading}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              {loading ? 'Adding...' : 'Add Product'}
-            </Button>
-          </div>
-        </form>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

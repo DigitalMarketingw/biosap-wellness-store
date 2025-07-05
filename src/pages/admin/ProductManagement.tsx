@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,11 +23,10 @@ interface Product {
   is_active: boolean;
   is_featured: boolean;
   category_id: string;
-  subcategory_id: string | null;
   categories?: { name: string };
-  subcategories?: { name: string };
   reorder_point: number;
   description: string;
+  supplier_id: string | null;
   reorder_quantity: number;
   image_urls: string[];
   ingredients: string;
@@ -62,8 +60,7 @@ const ProductManagement = () => {
         .from('products')
         .select(`
           *,
-          categories!products_category_id_fkey(name),
-          subcategories!products_subcategory_id_fkey(name)
+          categories!products_category_id_fkey(name)
         `)
         .order('created_at', { ascending: false });
 
@@ -310,11 +307,6 @@ const ProductManagement = () => {
                       <span>Stock: {product.stock || 0}</span>
                       {product.categories && (
                         <Badge variant="outline">{product.categories.name}</Badge>
-                      )}
-                      {product.subcategories && (
-                        <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-                          {product.subcategories.name}
-                        </Badge>
                       )}
                     </div>
                     {product.image_urls && product.image_urls.length > 0 && (
