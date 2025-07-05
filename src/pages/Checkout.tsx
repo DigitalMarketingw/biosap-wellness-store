@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { usePhonePePayment } from '@/hooks/usePhonePePayment';
+import { useRazorpayPayment } from '@/hooks/useRazorpayPayment';
 import ShippingForm from '@/components/checkout/ShippingForm';
 import PaymentMethodSelector from '@/components/checkout/PaymentMethodSelector';
 import OrderSummary from '@/components/checkout/OrderSummary';
@@ -15,7 +15,7 @@ const Checkout = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
-  const { initiatePayment, isProcessing: isPhonePeProcessing } = usePhonePePayment();
+  const { initiatePayment, isProcessing: isRazorpayProcessing } = useRazorpayPayment();
   
   const [shippingInfo, setShippingInfo] = useState({
     firstName: '',
@@ -150,7 +150,7 @@ const Checkout = () => {
       console.log('Checkout - Order created, ID:', order.id);
 
       if (paymentMethod === 'online') {
-        console.log('Checkout - Initiating PhonePe payment for order:', order.id);
+        console.log('Checkout - Initiating Razorpay payment for order:', order.id);
         
         // Add a delay to ensure order is fully committed to database
         await new Promise(resolve => setTimeout(resolve, 2000));
@@ -160,11 +160,11 @@ const Checkout = () => {
         
         if (!paymentResult.success) {
           console.error('Checkout - Payment initiation failed');
-          throw new Error('Failed to initiate PhonePe payment. Please try again.');
+          throw new Error('Failed to initiate Razorpay payment. Please try again.');
         }
         
-        console.log('Checkout - Payment initiated successfully, redirecting...');
-        // The user will be redirected to PhonePe, so we don't need to do anything else here
+        console.log('Checkout - Payment initiated successfully');
+        // The payment modal will handle the rest
         return;
       } else {
         // Cash on Delivery
@@ -234,7 +234,7 @@ const Checkout = () => {
             totalPrice={getTotalPrice()}
             paymentMethod={paymentMethod}
             isProcessing={isProcessing}
-            isPhonePeProcessing={isPhonePeProcessing}
+            isPhonePeProcessing={isRazorpayProcessing}
             onSubmit={handlePlaceOrder}
           />
         </div>

@@ -73,7 +73,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
         >
           {isProcessing || isPhonePeProcessing 
             ? (paymentMethod === 'online' ? 'Processing Payment...' : 'Processing Order...') 
-            : (paymentMethod === 'online' ? 'Pay with PhonePe' : 'Place Order')
+            : (paymentMethod === 'online' ? 'Pay with Razorpay' : 'Place Order')
           }
         </Button>
       </CardContent>

@@ -43,12 +43,12 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
               className="text-green-600"
             />
             <div className="flex-1">
-              <span className="font-medium">PhonePe Payment</span>
-              <p className="text-sm text-gray-600">Pay securely with PhonePe, UPI, Cards & more</p>
+              <span className="font-medium">Razorpay Payment</span>
+              <p className="text-sm text-gray-600">Pay securely with UPI, Cards, Net Banking & more</p>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-6 bg-purple-600 rounded text-white text-xs flex items-center justify-center font-bold">
-                Pe
+              <div className="w-8 h-6 bg-blue-600 rounded text-white text-xs flex items-center justify-center font-bold">
+                RP
               </div>
             </div>
           </label>

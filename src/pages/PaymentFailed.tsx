@@ -9,12 +9,28 @@ const PaymentFailed = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [transactionId, setTransactionId] = useState<string | null>(null);
+  const [failureReason, setFailureReason] = useState<string | null>(null);
 
   useEffect(() => {
     const merchantTransactionId = searchParams.get('merchantTransactionId');
+    const reason = searchParams.get('reason');
     setTransactionId(merchantTransactionId);
-    console.log('PaymentFailed - Transaction ID:', merchantTransactionId);
+    setFailureReason(reason);
+    console.log('PaymentFailed - Transaction ID:', merchantTransactionId, 'Reason:', reason);
   }, [searchParams]);
+
+  const getFailureMessage = () => {
+    switch (failureReason) {
+      case 'cancelled':
+        return 'Payment was cancelled by you';
+      case 'verification_failed':
+        return 'Payment verification failed';
+      case 'error':
+        return 'An error occurred during payment processing';
+      default:
+        return 'Sorry, there was an issue processing your payment through Razorpay. Your order has not been placed.';
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 py-16">
@@ -28,26 +44,26 @@ const PaymentFailed = () => {
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <p className="text-gray-600">
-              Sorry, there was an issue processing your payment through PhonePe. Your order has not been placed.
+              {getFailureMessage()}
             </p>
             
             {transactionId && (
               <div className="bg-gray-50 p-3 rounded-lg">
                 <p className="text-sm text-gray-600">
-                  Transaction ID: <span className="font-mono text-xs">{transactionId}</span>
+                  Reference ID: <span className="font-mono text-xs">{transactionId}</span>
                 </p>
               </div>
             )}
             
             <div className="bg-red-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-red-800 mb-2">What might have happened?</h3>
+              <h3 className="font-semibold text-red-800 mb-2">Common reasons for payment failure:</h3>
               <ul className="text-sm text-red-700 text-left space-y-1">
                 <li>• Payment was cancelled by you</li>
                 <li>• Insufficient balance in your account</li>
                 <li>• Network connectivity issues</li>
                 <li>• Bank server temporarily unavailable</li>
                 <li>• Card limit exceeded or expired</li>
-                <li>• PhonePe server issues</li>
+                <li>• UPI transaction timeout</li>
                 <li>• Payment session expired</li>
               </ul>
             </div>

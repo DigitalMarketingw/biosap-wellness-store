@@ -4,13 +4,13 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Package } from 'lucide-react';
-import { usePhonePePayment } from '@/hooks/usePhonePePayment';
+import { useRazorpayPayment } from '@/hooks/useRazorpayPayment';
 import { useCart } from '@/contexts/CartContext';
 
 const PaymentSuccess = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { verifyPayment } = usePhonePePayment();
+  const { verifyPayment } = useRazorpayPayment();
   const { clearCart } = useCart();
   const [isVerifying, setIsVerifying] = useState(true);
   const [paymentVerified, setPaymentVerified] = useState(false);
@@ -58,7 +58,7 @@ const PaymentSuccess = () => {
         <div className="max-w-md mx-auto text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
           <h2 className="text-xl font-semibold text-gray-800">Verifying Payment...</h2>
-          <p className="text-gray-600">Please wait while we confirm your payment with PhonePe</p>
+          <p className="text-gray-600">Please wait while we confirm your payment with Razorpay</p>
         </div>
       </div>
     );
@@ -76,7 +76,7 @@ const PaymentSuccess = () => {
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <p className="text-gray-600">
-              Your payment has been processed successfully through PhonePe and your order has been confirmed.
+              Your payment has been processed successfully through Razorpay and your order has been confirmed.
             </p>
             
             {orderDetails && (
@@ -84,7 +84,7 @@ const PaymentSuccess = () => {
                 <h3 className="font-semibold text-gray-800 mb-2">Payment Details</h3>
                 <div className="space-y-1 text-sm text-gray-600">
                   <div className="flex justify-between">
-                    <span>Transaction ID:</span>
+                    <span>Payment ID:</span>
                     <span className="font-mono text-xs">{orderDetails.transactionId}</span>
                   </div>
                   {orderDetails.amount && (
@@ -95,7 +95,7 @@ const PaymentSuccess = () => {
                   )}
                   <div className="flex justify-between">
                     <span>Payment Method:</span>
-                    <span>PhonePe</span>
+                    <span>Razorpay</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Status:</span>
@@ -103,7 +103,7 @@ const PaymentSuccess = () => {
                   </div>
                   {merchantTransactionId && (
                     <div className="flex justify-between">
-                      <span>Merchant TXN ID:</span>
+                      <span>Reference ID:</span>
                       <span className="font-mono text-xs">{merchantTransactionId}</span>
                     </div>
                   )}

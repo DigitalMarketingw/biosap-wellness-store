@@ -367,7 +367,7 @@ export type Database = {
           estimated_delivery?: string | null
           id?: string
           payment_completed_at?: string | null
-          payment_method: string
+          payment_method?: string
           payment_status?: string | null
           shipped_at?: string | null
           shipping_address: Json
@@ -405,8 +405,10 @@ export type Database = {
           merchant_transaction_id: string
           order_id: string
           payment_method: string
-          phonepe_response: Json | null
-          phonepe_transaction_id: string | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          razorpay_response: Json | null
+          razorpay_signature: string | null
           status: string
           updated_at: string
         }
@@ -417,8 +419,10 @@ export type Database = {
           merchant_transaction_id: string
           order_id: string
           payment_method?: string
-          phonepe_response?: Json | null
-          phonepe_transaction_id?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_response?: Json | null
+          razorpay_signature?: string | null
           status?: string
           updated_at?: string
         }
@@ -429,8 +433,10 @@ export type Database = {
           merchant_transaction_id?: string
           order_id?: string
           payment_method?: string
-          phonepe_response?: Json | null
-          phonepe_transaction_id?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_response?: Json | null
+          razorpay_signature?: string | null
           status?: string
           updated_at?: string
         }
@@ -493,7 +499,7 @@ export type Database = {
           review_count: number | null
           sku: string | null
           stock: number | null
-          supplier_id: string | null
+          subcategory_id: string | null
           updated_at: string | null
           usage_instructions: string | null
         }
@@ -515,7 +521,7 @@ export type Database = {
           review_count?: number | null
           sku?: string | null
           stock?: number | null
-          supplier_id?: string | null
+          subcategory_id?: string | null
           updated_at?: string | null
           usage_instructions?: string | null
         }
@@ -537,7 +543,7 @@ export type Database = {
           review_count?: number | null
           sku?: string | null
           stock?: number | null
-          supplier_id?: string | null
+          subcategory_id?: string | null
           updated_at?: string | null
           usage_instructions?: string | null
         }
@@ -550,10 +556,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "products_supplier_id_fkey"
-            columns: ["supplier_id"]
+            foreignKeyName: "products_subcategory_id_fkey"
+            columns: ["subcategory_id"]
             isOneToOne: false
-            referencedRelation: "suppliers"
+            referencedRelation: "subcategories"
             referencedColumns: ["id"]
           },
         ]
@@ -669,50 +675,52 @@ export type Database = {
         }
         Relationships: []
       }
-      suppliers: {
+      subcategories: {
         Row: {
-          address: Json | null
-          contact_person: string | null
+          category_id: string | null
           created_at: string
-          email: string | null
+          description: string | null
           id: string
+          image_url: string | null
           is_active: boolean | null
           name: string
-          notes: string | null
-          payment_terms: string | null
-          phone: string | null
-          tax_id: string | null
+          slug: string
+          sort_order: number | null
           updated_at: string
         }
         Insert: {
-          address?: Json | null
-          contact_person?: string | null
+          category_id?: string | null
           created_at?: string
-          email?: string | null
+          description?: string | null
           id?: string
+          image_url?: string | null
           is_active?: boolean | null
           name: string
-          notes?: string | null
-          payment_terms?: string | null
-          phone?: string | null
-          tax_id?: string | null
+          slug: string
+          sort_order?: number | null
           updated_at?: string
         }
         Update: {
-          address?: Json | null
-          contact_person?: string | null
+          category_id?: string | null
           created_at?: string
-          email?: string | null
+          description?: string | null
           id?: string
+          image_url?: string | null
           is_active?: boolean | null
           name?: string
-          notes?: string | null
-          payment_terms?: string | null
-          phone?: string | null
-          tax_id?: string | null
+          slug?: string
+          sort_order?: number | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "subcategories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       system_settings: {
         Row: {
