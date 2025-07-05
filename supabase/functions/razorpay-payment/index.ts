@@ -36,27 +36,39 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const url = new URL(req.url);
-    const action = url.searchParams.get('action');
+    const requestBody = await req.json();
+    console.log('Razorpay Edge Function - Request body:', requestBody);
 
-    if (action === 'create-order') {
-      return await handleCreateOrder(req, supabaseClient);
-    } else if (action === 'verify-payment') {
-      return await handleVerifyPayment(req, supabaseClient);
+    // Detect action based on request body content
+    const isCreateOrder = requestBody.orderId && requestBody.amount && 
+                         !requestBody.razorpay_order_id && !requestBody.razorpay_payment_id;
+    const isVerifyPayment = requestBody.razorpay_order_id && requestBody.razorpay_payment_id && 
+                           requestBody.razorpay_signature;
+
+    if (isCreateOrder) {
+      console.log('Detected create order request');
+      return await handleCreateOrder(requestBody, supabaseClient);
+    } else if (isVerifyPayment) {
+      console.log('Detected verify payment request');
+      return await handleVerifyPayment(requestBody, supabaseClient);
     } else {
-      return new Response('Invalid action', { status: 400, headers: corsHeaders });
+      console.error('Invalid request - cannot determine action:', requestBody);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid request format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
   } catch (error) {
     console.error('Razorpay payment error:', error);
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ success: false, error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
 
-async function handleCreateOrder(req: Request, supabaseClient: any) {
-  const { orderId, amount }: CreateOrderRequest = await req.json();
+async function handleCreateOrder(requestData: CreateOrderRequest, supabaseClient: any) {
+  const { orderId, amount } = requestData;
 
   console.log('Creating Razorpay order for:', { orderId, amount });
 
@@ -70,7 +82,7 @@ async function handleCreateOrder(req: Request, supabaseClient: any) {
   if (orderError || !order) {
     console.error('Order not found:', orderError);
     return new Response(
-      JSON.stringify({ error: 'Order not found' }),
+      JSON.stringify({ success: false, error: 'Order not found' }),
       { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
@@ -82,7 +94,7 @@ async function handleCreateOrder(req: Request, supabaseClient: any) {
   if (!razorpayKeyId || !razorpayKeySecret) {
     console.error('Razorpay credentials not found');
     return new Response(
-      JSON.stringify({ error: 'Payment service configuration error' }),
+      JSON.stringify({ success: false, error: 'Payment service configuration error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
@@ -108,7 +120,7 @@ async function handleCreateOrder(req: Request, supabaseClient: any) {
     const errorData = await razorpayResponse.text();
     console.error('Razorpay order creation failed:', errorData);
     return new Response(
-      JSON.stringify({ error: 'Failed to create payment order' }),
+      JSON.stringify({ success: false, error: 'Failed to create payment order' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
@@ -133,7 +145,7 @@ async function handleCreateOrder(req: Request, supabaseClient: any) {
   if (transactionError) {
     console.error('Failed to create payment transaction:', transactionError);
     return new Response(
-      JSON.stringify({ error: 'Failed to create payment transaction' }),
+      JSON.stringify({ success: false, error: 'Failed to create payment transaction' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
@@ -151,8 +163,8 @@ async function handleCreateOrder(req: Request, supabaseClient: any) {
   );
 }
 
-async function handleVerifyPayment(req: Request, supabaseClient: any) {
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId }: VerifyPaymentRequest = await req.json();
+async function handleVerifyPayment(requestData: VerifyPaymentRequest, supabaseClient: any) {
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId } = requestData;
 
   console.log('Verifying Razorpay payment:', { razorpay_order_id, razorpay_payment_id, orderId });
 
@@ -160,7 +172,7 @@ async function handleVerifyPayment(req: Request, supabaseClient: any) {
   const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
   if (!razorpayKeySecret) {
     return new Response(
-      JSON.stringify({ error: 'Payment service configuration error' }),
+      JSON.stringify({ success: false, error: 'Payment service configuration error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
@@ -174,7 +186,7 @@ async function handleVerifyPayment(req: Request, supabaseClient: any) {
   if (expectedSignature !== razorpay_signature) {
     console.error('Invalid payment signature');
     return new Response(
-      JSON.stringify({ error: 'Invalid payment signature' }),
+      JSON.stringify({ success: false, error: 'Invalid payment signature' }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
@@ -205,7 +217,7 @@ async function handleVerifyPayment(req: Request, supabaseClient: any) {
   if (updateError) {
     console.error('Failed to update payment transaction:', updateError);
     return new Response(
-      JSON.stringify({ error: 'Failed to update payment status' }),
+      JSON.stringify({ success: false, error: 'Failed to update payment status' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
