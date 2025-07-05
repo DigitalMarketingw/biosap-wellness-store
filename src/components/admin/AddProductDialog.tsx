@@ -343,8 +343,8 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({
           <div>
             <Label>Product Images</Label>
             <ImageUpload
-              imageUrls={imageUrls}
-              onImageUrlsChange={setImageUrls}
+              images={imageUrls}
+              onImagesChange={setImageUrls}
               maxImages={5}
             />
           </div>

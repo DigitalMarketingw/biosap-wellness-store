@@ -119,7 +119,7 @@ const Products = () => {
           query = query.order('price', { ascending: false });
           break;
         case 'rating':
-          query = query.order('rating', { ascending: false, nullsLast: true });
+          query = query.order('rating', { ascending: false, nullsFirst: false });
           break;
         case 'featured':
           query = query.order('is_featured', { ascending: false }).order('name');
