@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -86,6 +85,11 @@ export const useRazorpayPayment = () => {
       console.log('Calling edge function to create Razorpay order...');
       
       try {
+        console.log('Making request to edge function with:', {
+          orderId: orderId,
+          amount: order.total_amount,
+        });
+
         const { data, error } = await supabase.functions.invoke('razorpay-payment', {
           body: {
             orderId: orderId,
@@ -93,11 +97,18 @@ export const useRazorpayPayment = () => {
           },
         });
 
-        console.log('Edge function response:', { data, error });
+        console.log('Edge function response data:', data);
+        console.log('Edge function response error:', error);
 
         if (error) {
           console.error('Edge function error details:', error);
-          throw new Error(`Failed to create payment order: ${error.message || JSON.stringify(error)}`);
+          
+          // Check if it's a FunctionsHttpError with more details
+          if (error.message && error.message.includes('Edge Function returned a non-2xx status code')) {
+            throw new Error('Payment service is currently unavailable. Please try again in a few minutes or contact support if the issue persists.');
+          }
+          
+          throw new Error(`Payment service error: ${error.message || JSON.stringify(error)}`);
         }
 
         if (!data?.success) {
@@ -105,7 +116,7 @@ export const useRazorpayPayment = () => {
           throw new Error(data?.error || 'Failed to create payment order');
         }
 
-        console.log('Razorpay order created:', data);
+        console.log('Razorpay order created successfully:', data);
 
         // Prepare customer info
         const shipping = order.shipping_address as any;
@@ -162,7 +173,7 @@ export const useRazorpayPayment = () => {
         return { success: true };
       } catch (edgeFunctionError) {
         console.error('Edge function call failed:', edgeFunctionError);
-        throw new Error(`Payment service error: ${edgeFunctionError.message}`);
+        throw edgeFunctionError; // Re-throw the error with better message from above
       }
     } catch (error) {
       console.error('Payment initiation error:', error);

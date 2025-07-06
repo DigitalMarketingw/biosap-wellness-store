@@ -9,17 +9,31 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-serve(async (req) => {
-  console.log('=== Razorpay Edge Function Started ===');
-  console.log('Method:', req.method);
-  console.log('Headers:', Object.fromEntries(req.headers.entries()));
+interface RazorpayOrderRequest {
+  orderId: string;
+  amount: number;
+}
 
+interface RazorpayVerifyRequest {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+  orderId: string;
+}
+
+serve(async (req) => {
+  console.log('🚀 Razorpay Edge Function Started');
+  console.log('Method:', req.method);
+  console.log('URL:', req.url);
+
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('✅ Handling CORS preflight');
     return new Response(null, { headers: corsHeaders });
   }
 
   if (req.method !== 'POST') {
-    console.log('Invalid method:', req.method);
+    console.log('❌ Invalid method:', req.method);
     return new Response(
       JSON.stringify({ success: false, error: 'Method not allowed' }),
       { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -27,7 +41,8 @@ serve(async (req) => {
   }
 
   try {
-    // Environment validation
+    // Step 1: Environment validation with detailed logging
+    console.log('🔍 Checking environment variables...');
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const razorpayKeyId = Deno.env.get('RAZORPAY_KEY_ID');
@@ -38,86 +53,135 @@ serve(async (req) => {
       hasServiceKey: !!supabaseServiceKey,
       hasRazorpayKeyId: !!razorpayKeyId,
       hasRazorpayKeySecret: !!razorpayKeySecret,
+      supabaseUrlLength: supabaseUrl?.length || 0,
+      razorpayKeyIdLength: razorpayKeyId?.length || 0,
     });
 
     if (!supabaseUrl || !supabaseServiceKey) {
-      console.error('Missing Supabase environment variables');
+      console.error('❌ Missing Supabase environment variables');
       return new Response(
-        JSON.stringify({ success: false, error: 'Server configuration error - Supabase' }),
+        JSON.stringify({ 
+          success: false, 
+          error: 'Server configuration error - Supabase credentials missing',
+          details: 'SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not found'
+        }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     if (!razorpayKeyId || !razorpayKeySecret) {
-      console.error('Missing Razorpay credentials');
+      console.error('❌ Missing Razorpay credentials');
+      console.error('RAZORPAY_KEY_ID present:', !!razorpayKeyId);
+      console.error('RAZORPAY_KEY_SECRET present:', !!razorpayKeySecret);
       return new Response(
-        JSON.stringify({ success: false, error: 'Payment service not configured' }),
+        JSON.stringify({ 
+          success: false, 
+          error: 'Payment service not configured',
+          details: 'Razorpay credentials missing. Please configure RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in Supabase secrets.'
+        }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Initialize Supabase client
+    // Step 2: Initialize Supabase client
+    console.log('🔧 Initializing Supabase client...');
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Parse request body
-    let requestBody;
+    // Step 3: Parse request body with detailed error handling
+    console.log('📝 Parsing request body...');
+    let requestBody: RazorpayOrderRequest | RazorpayVerifyRequest;
+    
     try {
       const bodyText = await req.text();
-      console.log('Raw request body:', bodyText);
+      console.log('Raw request body length:', bodyText.length);
+      console.log('Raw request body preview:', bodyText.substring(0, 200));
+      
+      if (!bodyText.trim()) {
+        throw new Error('Empty request body');
+      }
+      
       requestBody = JSON.parse(bodyText);
-      console.log('Parsed request body:', requestBody);
-    } catch (error) {
-      console.error('Failed to parse request body:', error);
+      console.log('✅ Successfully parsed request body');
+      console.log('Request body keys:', Object.keys(requestBody));
+    } catch (parseError) {
+      console.error('❌ Failed to parse request body:', parseError);
       return new Response(
-        JSON.stringify({ success: false, error: 'Invalid request body' }),
+        JSON.stringify({ 
+          success: false, 
+          error: 'Invalid request body',
+          details: parseError.message
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Route to appropriate handler
-    if (requestBody.orderId && requestBody.amount && !requestBody.razorpay_payment_id) {
-      console.log('Routing to order creation');
-      return await handleCreateOrder(requestBody, supabase, razorpayKeyId, razorpayKeySecret);
-    } else if (requestBody.razorpay_payment_id && requestBody.razorpay_signature) {
-      console.log('Routing to payment verification');
-      return await handleVerifyPayment(requestBody, supabase, razorpayKeyId, razorpayKeySecret);
-    } else {
-      console.error('Invalid request format:', requestBody);
-      return new Response(
-        JSON.stringify({ success: false, error: 'Invalid request format' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Step 4: Route to appropriate handler
+    console.log('🔀 Routing request...');
+    
+    if ('orderId' in requestBody && 'amount' in requestBody && !('razorpay_payment_id' in requestBody)) {
+      console.log('📋 Routing to order creation');
+      return await handleCreateOrder(requestBody as RazorpayOrderRequest, supabase, razorpayKeyId, razorpayKeySecret);
+    } 
+    
+    if ('razorpay_payment_id' in requestBody && 'razorpay_signature' in requestBody) {
+      console.log('✅ Routing to payment verification');
+      return await handleVerifyPayment(requestBody as RazorpayVerifyRequest, supabase, razorpayKeyId, razorpayKeySecret);
     }
+    
+    console.error('❌ Invalid request format:', requestBody);
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: 'Invalid request format',
+        details: 'Request must contain either (orderId, amount) for order creation or (razorpay_payment_id, razorpay_signature) for verification'
+      }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
   } catch (error) {
-    console.error('Edge function error:', error);
+    console.error('💥 Unexpected error in main handler:', error);
+    console.error('Error stack:', error.stack);
     return new Response(
       JSON.stringify({ 
         success: false, 
         error: 'Internal server error',
         details: error.message,
-        stack: error.stack
+        timestamp: new Date().toISOString()
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
 
-async function handleCreateOrder(requestData: any, supabase: any, razorpayKeyId: string, razorpayKeySecret: string) {
-  console.log('=== Creating Razorpay Order ===');
+async function handleCreateOrder(
+  requestData: RazorpayOrderRequest, 
+  supabase: any, 
+  razorpayKeyId: string, 
+  razorpayKeySecret: string
+) {
+  console.log('🏗️ === Creating Razorpay Order ===');
   const { orderId, amount } = requestData;
 
   try {
-    // Validate input
+    // Step 1: Validate input
+    console.log('🔍 Validating input data...');
+    console.log('Order ID:', orderId);
+    console.log('Amount:', amount);
+
     if (!orderId || !amount || amount <= 0) {
-      console.error('Invalid order data:', { orderId, amount });
+      console.error('❌ Invalid order data:', { orderId, amount });
       return new Response(
-        JSON.stringify({ success: false, error: 'Invalid order data' }),
+        JSON.stringify({ 
+          success: false, 
+          error: 'Invalid order data',
+          details: `orderId: ${orderId}, amount: ${amount}`
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Fetch order from database
-    console.log('Fetching order from database:', orderId);
+    // Step 2: Fetch order from database
+    console.log('📊 Fetching order from database...');
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .select('*')
@@ -125,16 +189,21 @@ async function handleCreateOrder(requestData: any, supabase: any, razorpayKeyId:
       .single();
 
     if (orderError) {
-      console.error('Order fetch error:', orderError);
+      console.error('❌ Order fetch error:', orderError);
       return new Response(
-        JSON.stringify({ success: false, error: 'Order not found', details: orderError.message }),
+        JSON.stringify({ 
+          success: false, 
+          error: 'Order not found',
+          details: orderError.message
+        }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Order found:', { id: order.id, amount: order.total_amount });
+    console.log('✅ Order found:', { id: order.id, amount: order.total_amount });
 
-    // Create Razorpay order
+    // Step 3: Create Razorpay order
+    console.log('💳 Creating Razorpay order...');
     const amountInPaise = Math.round(Number(amount) * 100);
     const razorpayOrderData = {
       amount: amountInPaise,
@@ -142,9 +211,11 @@ async function handleCreateOrder(requestData: any, supabase: any, razorpayKeyId:
       receipt: `order_${orderId.substring(0, 8)}`,
     };
 
-    console.log('Creating Razorpay order with data:', razorpayOrderData);
+    console.log('Razorpay order data:', razorpayOrderData);
 
     const authHeader = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
+    console.log('Auth header created, making API call...');
+
     const razorpayResponse = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
       headers: {
@@ -155,11 +226,13 @@ async function handleCreateOrder(requestData: any, supabase: any, razorpayKeyId:
     });
 
     console.log('Razorpay API response status:', razorpayResponse.status);
+    console.log('Razorpay API response headers:', Object.fromEntries(razorpayResponse.headers.entries()));
 
     if (!razorpayResponse.ok) {
       const errorText = await razorpayResponse.text();
-      console.error('Razorpay order creation failed:', {
+      console.error('❌ Razorpay order creation failed:', {
         status: razorpayResponse.status,
+        statusText: razorpayResponse.statusText,
         error: errorText
       });
       return new Response(
@@ -173,9 +246,10 @@ async function handleCreateOrder(requestData: any, supabase: any, razorpayKeyId:
     }
 
     const razorpayOrder = await razorpayResponse.json();
-    console.log('Razorpay order created successfully:', razorpayOrder);
+    console.log('✅ Razorpay order created:', razorpayOrder);
 
-    // Create payment transaction record
+    // Step 4: Create payment transaction record
+    console.log('💾 Creating payment transaction record...');
     const merchantTransactionId = `razorpay_${orderId.substring(0, 8)}_${Date.now()}`;
     
     const { error: transactionError } = await supabase
@@ -190,7 +264,7 @@ async function handleCreateOrder(requestData: any, supabase: any, razorpayKeyId:
       });
 
     if (transactionError) {
-      console.error('Failed to create payment transaction:', transactionError);
+      console.error('❌ Failed to create payment transaction:', transactionError);
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -201,9 +275,9 @@ async function handleCreateOrder(requestData: any, supabase: any, razorpayKeyId:
       );
     }
 
-    console.log('Payment transaction created successfully');
+    console.log('✅ Payment transaction created successfully');
 
-    // Return success response
+    // Step 5: Return success response
     const response = {
       success: true,
       razorpay_order_id: razorpayOrder.id,
@@ -213,30 +287,39 @@ async function handleCreateOrder(requestData: any, supabase: any, razorpayKeyId:
       merchant_transaction_id: merchantTransactionId,
     };
 
-    console.log('Returning success response:', response);
+    console.log('🎉 Returning success response:', response);
     return new Response(
       JSON.stringify(response),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Error in handleCreateOrder:', error);
+    console.error('💥 Error in handleCreateOrder:', error);
+    console.error('Error stack:', error.stack);
     return new Response(
       JSON.stringify({ 
         success: false, 
         error: 'Order creation failed',
-        details: error.message
+        details: error.message,
+        timestamp: new Date().toISOString()
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 }
 
-async function handleVerifyPayment(requestData: any, supabase: any, razorpayKeyId: string, razorpayKeySecret: string) {
-  console.log('=== Verifying Payment ===');
+async function handleVerifyPayment(
+  requestData: RazorpayVerifyRequest, 
+  supabase: any, 
+  razorpayKeyId: string, 
+  razorpayKeySecret: string
+) {
+  console.log('🔐 === Verifying Payment ===');
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId } = requestData;
 
   try {
+    console.log('Verifying payment:', { razorpay_order_id, razorpay_payment_id, orderId });
+
     // Verify signature using HMAC SHA256
     const encoder = new TextEncoder();
     const key = await crypto.subtle.importKey(
@@ -259,7 +342,7 @@ async function handleVerifyPayment(requestData: any, supabase: any, razorpayKeyI
     });
 
     if (expectedSignature !== razorpay_signature) {
-      console.error('Invalid payment signature');
+      console.error('❌ Invalid payment signature');
       return new Response(
         JSON.stringify({ success: false, error: 'Invalid payment signature' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -274,7 +357,7 @@ async function handleVerifyPayment(requestData: any, supabase: any, razorpayKeyI
     });
 
     if (!paymentResponse.ok) {
-      console.error('Failed to fetch payment details from Razorpay');
+      console.error('❌ Failed to fetch payment details from Razorpay');
       return new Response(
         JSON.stringify({ success: false, error: 'Failed to verify payment with Razorpay' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -301,7 +384,7 @@ async function handleVerifyPayment(requestData: any, supabase: any, razorpayKeyI
       .eq('razorpay_order_id', razorpay_order_id);
 
     if (updateError) {
-      console.error('Failed to update payment transaction:', updateError);
+      console.error('❌ Failed to update payment transaction:', updateError);
     }
 
     // Update order status if payment successful
@@ -317,9 +400,9 @@ async function handleVerifyPayment(requestData: any, supabase: any, razorpayKeyI
         .eq('id', orderId);
 
       if (orderUpdateError) {
-        console.error('Failed to update order status:', orderUpdateError);
+        console.error('❌ Failed to update order status:', orderUpdateError);
       } else {
-        console.log('Order status updated successfully');
+        console.log('✅ Order status updated successfully');
       }
     }
 
@@ -333,7 +416,7 @@ async function handleVerifyPayment(requestData: any, supabase: any, razorpayKeyI
     );
 
   } catch (error) {
-    console.error('Error in handleVerifyPayment:', error);
+    console.error('💥 Error in handleVerifyPayment:', error);
     return new Response(
       JSON.stringify({ 
         success: false, 
