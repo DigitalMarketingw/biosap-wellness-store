@@ -12,46 +12,75 @@ const corsHeaders = {
 serve(async (req) => {
   console.log('=== Razorpay Edge Function Started ===');
   console.log('Method:', req.method);
-  console.log('URL:', req.url);
+  console.log('Headers:', Object.fromEntries(req.headers.entries()));
 
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   if (req.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405, headers: corsHeaders });
+    console.log('Invalid method:', req.method);
+    return new Response(
+      JSON.stringify({ success: false, error: 'Method not allowed' }),
+      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 
   try {
-    // Initialize Supabase client
+    // Environment validation
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    
+    const razorpayKeyId = Deno.env.get('RAZORPAY_KEY_ID');
+    const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
+
     console.log('Environment check:', {
       hasSupabaseUrl: !!supabaseUrl,
       hasServiceKey: !!supabaseServiceKey,
-      supabaseUrl: supabaseUrl?.substring(0, 30) + '...'
+      hasRazorpayKeyId: !!razorpayKeyId,
+      hasRazorpayKeySecret: !!razorpayKeySecret,
     });
-    
+
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error('Missing Supabase environment variables');
       return new Response(
-        JSON.stringify({ success: false, error: 'Server configuration error' }),
+        JSON.stringify({ success: false, error: 'Server configuration error - Supabase' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    if (!razorpayKeyId || !razorpayKeySecret) {
+      console.error('Missing Razorpay credentials');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Payment service not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Initialize Supabase client
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Parse request body
-    const requestBody = await req.json();
-    console.log('Request body received:', JSON.stringify(requestBody, null, 2));
+    let requestBody;
+    try {
+      const bodyText = await req.text();
+      console.log('Raw request body:', bodyText);
+      requestBody = JSON.parse(bodyText);
+      console.log('Parsed request body:', requestBody);
+    } catch (error) {
+      console.error('Failed to parse request body:', error);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid request body' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-    // Check if this is order creation or payment verification
+    // Route to appropriate handler
     if (requestBody.orderId && requestBody.amount && !requestBody.razorpay_payment_id) {
-      return await handleCreateOrder(requestBody, supabase);
+      console.log('Routing to order creation');
+      return await handleCreateOrder(requestBody, supabase, razorpayKeyId, razorpayKeySecret);
     } else if (requestBody.razorpay_payment_id && requestBody.razorpay_signature) {
-      return await handleVerifyPayment(requestBody, supabase);
+      console.log('Routing to payment verification');
+      return await handleVerifyPayment(requestBody, supabase, razorpayKeyId, razorpayKeySecret);
     } else {
       console.error('Invalid request format:', requestBody);
       return new Response(
@@ -62,13 +91,18 @@ serve(async (req) => {
   } catch (error) {
     console.error('Edge function error:', error);
     return new Response(
-      JSON.stringify({ success: false, error: 'Internal server error', details: error.message }),
+      JSON.stringify({ 
+        success: false, 
+        error: 'Internal server error',
+        details: error.message,
+        stack: error.stack
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
 
-async function handleCreateOrder(requestData: any, supabase: any) {
+async function handleCreateOrder(requestData: any, supabase: any, razorpayKeyId: string, razorpayKeySecret: string) {
   console.log('=== Creating Razorpay Order ===');
   const { orderId, amount } = requestData;
 
@@ -79,24 +113,6 @@ async function handleCreateOrder(requestData: any, supabase: any) {
       return new Response(
         JSON.stringify({ success: false, error: 'Invalid order data' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Get Razorpay credentials
-    const razorpayKeyId = Deno.env.get('RAZORPAY_KEY_ID');
-    const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
-
-    console.log('Razorpay credentials check:', {
-      hasKeyId: !!razorpayKeyId,
-      hasKeySecret: !!razorpayKeySecret,
-      keyIdPrefix: razorpayKeyId?.substring(0, 12) + '...'
-    });
-
-    if (!razorpayKeyId || !razorpayKeySecret) {
-      console.error('Missing Razorpay credentials');
-      return new Response(
-        JSON.stringify({ success: false, error: 'Payment service not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -116,14 +132,6 @@ async function handleCreateOrder(requestData: any, supabase: any) {
       );
     }
 
-    if (!order) {
-      console.error('Order not found:', orderId);
-      return new Response(
-        JSON.stringify({ success: false, error: 'Order not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     console.log('Order found:', { id: order.id, amount: order.total_amount });
 
     // Create Razorpay order
@@ -132,17 +140,11 @@ async function handleCreateOrder(requestData: any, supabase: any) {
       amount: amountInPaise,
       currency: 'INR',
       receipt: `order_${orderId.substring(0, 8)}`,
-      notes: {
-        orderId: orderId,
-        userId: order.user_id,
-      },
     };
 
     console.log('Creating Razorpay order with data:', razorpayOrderData);
 
     const authHeader = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
-    console.log('Auth header created, making API call to Razorpay...');
-
     const razorpayResponse = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
       headers: {
@@ -158,7 +160,6 @@ async function handleCreateOrder(requestData: any, supabase: any) {
       const errorText = await razorpayResponse.text();
       console.error('Razorpay order creation failed:', {
         status: razorpayResponse.status,
-        statusText: razorpayResponse.statusText,
         error: errorText
       });
       return new Response(
@@ -177,7 +178,6 @@ async function handleCreateOrder(requestData: any, supabase: any) {
     // Create payment transaction record
     const merchantTransactionId = `razorpay_${orderId.substring(0, 8)}_${Date.now()}`;
     
-    console.log('Creating payment transaction record:', merchantTransactionId);
     const { error: transactionError } = await supabase
       .from('payment_transactions')
       .insert({
@@ -211,11 +211,6 @@ async function handleCreateOrder(requestData: any, supabase: any) {
       currency: razorpayOrder.currency,
       key: razorpayKeyId,
       merchant_transaction_id: merchantTransactionId,
-      order: {
-        id: order.id,
-        user_id: order.user_id,
-        total_amount: order.total_amount
-      }
     };
 
     console.log('Returning success response:', response);
@@ -237,23 +232,11 @@ async function handleCreateOrder(requestData: any, supabase: any) {
   }
 }
 
-async function handleVerifyPayment(requestData: any, supabase: any) {
+async function handleVerifyPayment(requestData: any, supabase: any, razorpayKeyId: string, razorpayKeySecret: string) {
   console.log('=== Verifying Payment ===');
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId } = requestData;
 
   try {
-    // Get Razorpay credentials
-    const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
-    const razorpayKeyId = Deno.env.get('RAZORPAY_KEY_ID');
-    
-    if (!razorpayKeySecret || !razorpayKeyId) {
-      console.error('Missing Razorpay credentials for verification');
-      return new Response(
-        JSON.stringify({ success: false, error: 'Payment service not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     // Verify signature using HMAC SHA256
     const encoder = new TextEncoder();
     const key = await crypto.subtle.importKey(
@@ -272,8 +255,6 @@ async function handleVerifyPayment(requestData: any, supabase: any) {
       .join('');
 
     console.log('Signature verification:', {
-      expected: expectedSignature.substring(0, 20) + '...',
-      received: razorpay_signature.substring(0, 20) + '...',
       match: expectedSignature === razorpay_signature
     });
 
@@ -284,8 +265,6 @@ async function handleVerifyPayment(requestData: any, supabase: any) {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    console.log('Payment signature verified successfully');
 
     // Fetch payment details from Razorpay
     const paymentResponse = await fetch(`https://api.razorpay.com/v1/payments/${razorpay_payment_id}`, {

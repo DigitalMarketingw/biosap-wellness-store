@@ -84,80 +84,86 @@ export const useRazorpayPayment = () => {
 
       // Create Razorpay order via edge function
       console.log('Calling edge function to create Razorpay order...');
-      const { data, error } = await supabase.functions.invoke('razorpay-payment', {
-        body: {
-          orderId: orderId,
-          amount: order.total_amount,
-        },
-      });
-
-      console.log('Edge function response:', { data, error });
-
-      if (error) {
-        console.error('Edge function error:', error);
-        throw new Error(`Failed to create payment order: ${error.message}`);
-      }
-
-      if (!data?.success) {
-        console.error('Order creation failed:', data);
-        throw new Error(data?.error || 'Failed to create payment order');
-      }
-
-      console.log('Razorpay order created:', data);
-
-      // Prepare customer info
-      const shipping = order.shipping_address as any;
-      const customerName = shipping && typeof shipping === 'object' 
-        ? `${shipping.firstName || ''} ${shipping.lastName || ''}`.trim()
-        : '';
-      const customerEmail = shipping && typeof shipping === 'object' 
-        ? shipping.email || ''
-        : '';
-      const customerPhone = shipping && typeof shipping === 'object' 
-        ? shipping.phone || ''
-        : '';
-
-      // Configure Razorpay checkout options
-      const options: RazorpayPaymentOptions = {
-        key: data.key,
-        amount: data.amount,
-        currency: data.currency,
-        order_id: data.razorpay_order_id,
-        name: 'BIOSAP',
-        description: `Order #${orderId.slice(0, 8)}`,
-        handler: async (response: any) => {
-          console.log('Payment successful:', response);
-          await handlePaymentSuccess(response, orderId);
-        },
-        prefill: {
-          name: customerName,
-          email: customerEmail,
-          contact: customerPhone,
-        },
-        theme: {
-          color: '#22c55e',
-        },
-        modal: {
-          ondismiss: () => {
-            console.log('Payment cancelled by user');
-            setIsProcessing(false);
-            window.location.href = `/payment-failed?merchantTransactionId=${data.merchant_transaction_id}&reason=cancelled`;
+      
+      try {
+        const { data, error } = await supabase.functions.invoke('razorpay-payment', {
+          body: {
+            orderId: orderId,
+            amount: order.total_amount,
           },
-        },
-        retry: {
-          enabled: true,
-          max_count: 1,
-        },
-        timeout: 300,
-        remember_customer: false,
-      };
+        });
 
-      // Open Razorpay checkout
-      console.log('Opening Razorpay checkout with options:', options);
-      const rzp = new window.Razorpay(options);
-      rzp.open();
+        console.log('Edge function response:', { data, error });
 
-      return { success: true };
+        if (error) {
+          console.error('Edge function error details:', error);
+          throw new Error(`Failed to create payment order: ${error.message || JSON.stringify(error)}`);
+        }
+
+        if (!data?.success) {
+          console.error('Order creation failed:', data);
+          throw new Error(data?.error || 'Failed to create payment order');
+        }
+
+        console.log('Razorpay order created:', data);
+
+        // Prepare customer info
+        const shipping = order.shipping_address as any;
+        const customerName = shipping && typeof shipping === 'object' 
+          ? `${shipping.firstName || ''} ${shipping.lastName || ''}`.trim()
+          : '';
+        const customerEmail = shipping && typeof shipping === 'object' 
+          ? shipping.email || ''
+          : '';
+        const customerPhone = shipping && typeof shipping === 'object' 
+          ? shipping.phone || ''
+          : '';
+
+        // Configure Razorpay checkout options
+        const options: RazorpayPaymentOptions = {
+          key: data.key,
+          amount: data.amount,
+          currency: data.currency,
+          order_id: data.razorpay_order_id,
+          name: 'BIOSAP',
+          description: `Order #${orderId.slice(0, 8)}`,
+          handler: async (response: any) => {
+            console.log('Payment successful:', response);
+            await handlePaymentSuccess(response, orderId);
+          },
+          prefill: {
+            name: customerName,
+            email: customerEmail,
+            contact: customerPhone,
+          },
+          theme: {
+            color: '#22c55e',
+          },
+          modal: {
+            ondismiss: () => {
+              console.log('Payment cancelled by user');
+              setIsProcessing(false);
+              window.location.href = `/payment-failed?merchantTransactionId=${data.merchant_transaction_id}&reason=cancelled`;
+            },
+          },
+          retry: {
+            enabled: true,
+            max_count: 1,
+          },
+          timeout: 300,
+          remember_customer: false,
+        };
+
+        // Open Razorpay checkout
+        console.log('Opening Razorpay checkout with options:', options);
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+
+        return { success: true };
+      } catch (edgeFunctionError) {
+        console.error('Edge function call failed:', edgeFunctionError);
+        throw new Error(`Payment service error: ${edgeFunctionError.message}`);
+      }
     } catch (error) {
       console.error('Payment initiation error:', error);
       setIsProcessing(false);
