@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/button';
@@ -33,7 +32,6 @@ const Checkout = () => {
 
   const handleInputChange = (field: string, value: string) => {
     setShippingInfo(prev => ({ ...prev, [field]: value }));
-    // Clear validation error when user starts typing
     if (validationErrors[field]) {
       setValidationErrors(prev => ({ ...prev, [field]: '' }));
     }
@@ -59,20 +57,17 @@ const Checkout = () => {
   };
 
   const createOrder = async () => {
-    console.log('Checkout - Starting order creation...');
+    console.log('=== Creating Order ===');
     
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      console.error('Checkout - User not authenticated');
       throw new Error('User not authenticated');
     }
 
-    console.log('Checkout - Creating order for user:', user.id);
-    
-    // Clean and format shipping info
+    // Clean shipping info
     const cleanShippingInfo = {
       ...shippingInfo,
-      phone: shippingInfo.phone.replace(/\D/g, ''), // Remove non-digits
+      phone: shippingInfo.phone.replace(/\D/g, ''),
       email: shippingInfo.email.toLowerCase().trim(),
       firstName: shippingInfo.firstName.trim(),
       lastName: shippingInfo.lastName.trim(),
@@ -81,8 +76,6 @@ const Checkout = () => {
       state: shippingInfo.state.trim(),
       pincode: shippingInfo.pincode.trim()
     };
-
-    console.log('Checkout - Clean shipping info:', cleanShippingInfo);
 
     // Create order
     const { data: order, error: orderError } = await supabase
@@ -99,11 +92,9 @@ const Checkout = () => {
       .single();
 
     if (orderError) {
-      console.error('Checkout - Order creation error:', orderError);
+      console.error('Order creation error:', orderError);
       throw new Error(`Failed to create order: ${orderError.message}`);
     }
-
-    console.log('Checkout - Order created successfully:', order);
 
     // Create order items
     const orderItems = items.map(item => ({
@@ -113,27 +104,21 @@ const Checkout = () => {
       price: item.product.price
     }));
 
-    console.log('Checkout - Creating order items:', orderItems);
-
     const { error: itemsError } = await supabase
       .from('order_items')
       .insert(orderItems);
 
     if (itemsError) {
-      console.error('Checkout - Order items creation error:', itemsError);
-      // Try to clean up the order if items creation fails
+      console.error('Order items creation error:', itemsError);
       await supabase.from('orders').delete().eq('id', order.id);
       throw new Error(`Failed to create order items: ${itemsError.message}`);
     }
 
-    console.log('Checkout - Order items created successfully');
+    console.log('Order created successfully:', order.id);
     return order;
   };
 
   const handlePlaceOrder = async () => {
-    console.log('Checkout - Form submitted, payment method:', paymentMethod);
-    
-    // Validate form first
     if (!validateForm()) {
       toast({
         title: "Validation Error",
@@ -147,28 +132,21 @@ const Checkout = () => {
 
     try {
       const order = await createOrder();
-      console.log('Checkout - Order created, ID:', order.id);
 
       if (paymentMethod === 'online') {
-        console.log('Checkout - Initiating Razorpay payment for order:', order.id);
-        
-        // Add a delay to ensure order is fully committed to database
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        console.log('Initiating Razorpay payment for order:', order.id);
         
         const paymentResult = await initiatePayment(order.id);
-        console.log('Checkout - Payment initiation result:', paymentResult);
         
         if (!paymentResult.success) {
-          console.error('Checkout - Payment initiation failed');
-          throw new Error('Failed to initiate Razorpay payment. Please try again.');
+          throw new Error('Failed to initiate payment');
         }
         
-        console.log('Checkout - Payment initiated successfully');
-        // The payment modal will handle the rest and redirect to thank you page
+        console.log('Payment initiated successfully');
         return;
       } else {
-        // Cash on Delivery - redirect to thank you page directly
-        console.log('Checkout - COD order placed successfully');
+        // Cash on Delivery
+        console.log('COD order placed successfully');
         await clearCart();
 
         toast({
@@ -176,20 +154,14 @@ const Checkout = () => {
           description: `Your order #${order.id.slice(0, 8)} has been placed`,
         });
 
-        // Redirect to thank you page for COD orders too
         navigate(`/thank-you?orderId=${order.id}`);
       }
     } catch (error) {
-      console.error('Checkout - Error placing order:', error);
-      
-      let errorMessage = "Failed to place order. Please try again.";
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
+      console.error('Error placing order:', error);
       
       toast({
         title: "Error",
-        description: errorMessage,
+        description: error instanceof Error ? error.message : "Failed to place order. Please try again.",
         variant: "destructive"
       });
     } finally {

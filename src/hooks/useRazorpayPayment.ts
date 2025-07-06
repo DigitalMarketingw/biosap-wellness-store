@@ -21,6 +21,12 @@ interface RazorpayPaymentOptions {
   modal: {
     ondismiss: () => void;
   };
+  retry: {
+    enabled: true;
+    max_count: 1;
+  };
+  timeout: 300;
+  remember_customer: boolean;
 }
 
 declare global {
@@ -49,8 +55,10 @@ export const useRazorpayPayment = () => {
     });
   };
 
-  const initiatePayment = async (orderId: string, customerInfo?: any) => {
-    console.log('Razorpay - Initiating payment for order:', orderId);
+  const initiatePayment = async (orderId: string) => {
+    console.log('=== Initiating Razorpay Payment ===');
+    console.log('Order ID:', orderId);
+    
     setIsProcessing(true);
 
     try {
@@ -60,7 +68,7 @@ export const useRazorpayPayment = () => {
         throw new Error('Failed to load Razorpay script');
       }
 
-      // Get order details from our database
+      // Get order details from database
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .select('*, order_items(*, product:products(*))')
@@ -68,32 +76,33 @@ export const useRazorpayPayment = () => {
         .single();
 
       if (orderError || !order) {
+        console.error('Order not found:', orderError);
         throw new Error('Order not found');
       }
 
-      console.log('Razorpay - Order details:', order);
+      console.log('Order details:', order);
 
-      // Create Razorpay order
+      // Create Razorpay order via edge function
       const { data, error } = await supabase.functions.invoke('razorpay-payment', {
         body: {
           orderId: orderId,
           amount: order.total_amount,
         },
-        method: 'POST',
       });
 
       if (error) {
-        console.error('Razorpay - Order creation error:', error);
+        console.error('Edge function error:', error);
         throw new Error('Failed to create payment order');
       }
 
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to create payment order');
+      if (!data?.success) {
+        console.error('Order creation failed:', data);
+        throw new Error(data?.error || 'Failed to create payment order');
       }
 
-      console.log('Razorpay - Order created successfully:', data);
+      console.log('Razorpay order created:', data);
 
-      // Prepare customer info - safely handle JSON type
+      // Prepare customer info
       const shipping = order.shipping_address as any;
       const customerName = shipping && typeof shipping === 'object' 
         ? `${shipping.firstName || ''} ${shipping.lastName || ''}`.trim()
@@ -105,16 +114,16 @@ export const useRazorpayPayment = () => {
         ? shipping.phone || ''
         : '';
 
-      // Razorpay checkout options
+      // Configure Razorpay checkout options
       const options: RazorpayPaymentOptions = {
         key: data.key,
         amount: data.amount,
         currency: data.currency,
         order_id: data.razorpay_order_id,
         name: 'BIOSAP',
-        description: 'Order Payment',
+        description: `Order #${orderId.slice(0, 8)}`,
         handler: async (response: any) => {
-          console.log('Razorpay - Payment response:', response);
+          console.log('Payment successful:', response);
           await handlePaymentSuccess(response, orderId);
         },
         prefill: {
@@ -127,20 +136,26 @@ export const useRazorpayPayment = () => {
         },
         modal: {
           ondismiss: () => {
-            console.log('Razorpay - Payment cancelled by user');
+            console.log('Payment cancelled by user');
             setIsProcessing(false);
             window.location.href = `/payment-failed?merchantTransactionId=${data.merchant_transaction_id}&reason=cancelled`;
           },
         },
+        retry: {
+          enabled: true,
+          max_count: 1,
+        },
+        timeout: 300,
+        remember_customer: false,
       };
 
       // Open Razorpay checkout
-      const rzp1 = new window.Razorpay(options);
-      rzp1.open();
+      const rzp = new window.Razorpay(options);
+      rzp.open();
 
       return { success: true };
     } catch (error) {
-      console.error('Razorpay - Payment initiation error:', error);
+      console.error('Payment initiation error:', error);
       setIsProcessing(false);
       throw error;
     }
@@ -148,8 +163,10 @@ export const useRazorpayPayment = () => {
 
   const handlePaymentSuccess = async (response: any, orderId: string) => {
     try {
-      console.log('Razorpay - Verifying payment:', response);
+      console.log('=== Verifying Payment ===');
+      console.log('Payment response:', response);
 
+      // Verify payment via edge function
       const { data, error } = await supabase.functions.invoke('razorpay-payment', {
         body: {
           razorpay_order_id: response.razorpay_order_id,
@@ -157,20 +174,19 @@ export const useRazorpayPayment = () => {
           razorpay_signature: response.razorpay_signature,
           orderId: orderId,
         },
-        method: 'POST',
       });
 
-      if (error || !data.success) {
-        console.error('Razorpay - Payment verification failed:', error);
+      if (error || !data?.success) {
+        console.error('Payment verification failed:', error || data);
         window.location.href = `/payment-failed?merchantTransactionId=${response.razorpay_payment_id}&reason=verification_failed`;
         return;
       }
 
-      console.log('Razorpay - Payment verified successfully');
-      // Redirect to enhanced thank you page instead of payment success
+      console.log('Payment verified successfully');
+      // Redirect to thank you page
       window.location.href = `/thank-you?orderId=${orderId}&merchantTransactionId=${response.razorpay_payment_id}`;
     } catch (error) {
-      console.error('Razorpay - Payment verification error:', error);
+      console.error('Payment verification error:', error);
       window.location.href = `/payment-failed?merchantTransactionId=${response.razorpay_payment_id}&reason=error`;
     } finally {
       setIsProcessing(false);
@@ -179,7 +195,7 @@ export const useRazorpayPayment = () => {
 
   const verifyPayment = async (merchantTransactionId: string) => {
     try {
-      console.log('Razorpay - Verifying payment with transaction ID:', merchantTransactionId);
+      console.log('Verifying payment with transaction ID:', merchantTransactionId);
 
       const { data: transaction, error } = await supabase
         .from('payment_transactions')
@@ -188,7 +204,7 @@ export const useRazorpayPayment = () => {
         .single();
 
       if (error || !transaction) {
-        console.error('Razorpay - Transaction not found:', error);
+        console.error('Transaction not found:', error);
         return { success: false, error: 'Transaction not found' };
       }
 
@@ -197,11 +213,11 @@ export const useRazorpayPayment = () => {
         data: {
           state: transaction.status === 'completed' ? 'COMPLETED' : 'FAILED',
           transactionId: transaction.razorpay_payment_id,
-          amount: transaction.amount * 100, // Convert back to paise for display
+          amount: transaction.amount * 100,
         },
       };
     } catch (error) {
-      console.error('Razorpay - Payment verification error:', error);
+      console.error('Payment verification error:', error);
       return { success: false, error: 'Verification failed' };
     }
   };
