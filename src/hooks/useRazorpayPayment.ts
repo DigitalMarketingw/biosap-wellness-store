@@ -83,6 +83,7 @@ export const useRazorpayPayment = () => {
       console.log('Order details:', order);
 
       // Create Razorpay order via edge function
+      console.log('Calling edge function to create Razorpay order...');
       const { data, error } = await supabase.functions.invoke('razorpay-payment', {
         body: {
           orderId: orderId,
@@ -90,9 +91,11 @@ export const useRazorpayPayment = () => {
         },
       });
 
+      console.log('Edge function response:', { data, error });
+
       if (error) {
         console.error('Edge function error:', error);
-        throw new Error('Failed to create payment order');
+        throw new Error(`Failed to create payment order: ${error.message}`);
       }
 
       if (!data?.success) {
@@ -150,6 +153,7 @@ export const useRazorpayPayment = () => {
       };
 
       // Open Razorpay checkout
+      console.log('Opening Razorpay checkout with options:', options);
       const rzp = new window.Razorpay(options);
       rzp.open();
 
