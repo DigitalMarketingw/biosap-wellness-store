@@ -11,9 +11,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useAdmin } from '@/contexts/AdminContext';
-import { Search, Eye, Edit, Package, Truck, Download, Calendar, Filter, SortAsc, MoreHorizontal, User } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Search, Eye, Edit, Package, Truck, Download, Calendar, Filter, SortAsc, MoreHorizontal, User, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { Navigate } from 'react-router-dom';
 
 interface Order {
   id: string;
@@ -50,7 +52,8 @@ interface Order {
 }
 
 const OrderManagement = () => {
-  const { logAdminActivity } = useAdmin();
+  const { adminUser, isAdmin, loading: adminLoading, logAdminActivity } = useAdmin();
+  const { user, session, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,11 +68,28 @@ const OrderManagement = () => {
   const [editingOrder, setEditingOrder] = useState<Partial<Order>>({});
 
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    // Only fetch orders when we have confirmed authentication and admin status
+    if (!authLoading && !adminLoading && user && session && isAdmin) {
+      fetchOrders();
+    }
+  }, [authLoading, adminLoading, user, session, isAdmin]);
 
   const fetchOrders = async () => {
+    // Check if user is authenticated and is admin
+    if (!user || !session || !isAdmin) {
+      console.error('Authentication required: user=', !!user, 'session=', !!session, 'isAdmin=', isAdmin);
+      toast({
+        title: "Authentication Error",
+        description: "You need to be signed in as an admin to view orders",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
     try {
+      console.log('Fetching orders as authenticated admin user:', user.id);
+      
       let query = supabase
         .from('orders')
         .select(`
@@ -105,14 +125,19 @@ const OrderManagement = () => {
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      
+      console.log('Successfully fetched orders:', data?.length || 0);
       setOrders((data as unknown as Order[]) || []);
       await logAdminActivity('view', 'orders');
     } catch (error) {
       console.error('Error fetching orders:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch orders",
+        description: "Failed to fetch orders. Please check your permissions.",
         variant: "destructive",
       });
     } finally {
@@ -245,8 +270,37 @@ const OrderManagement = () => {
   };
 
   useEffect(() => {
-    fetchOrders();
-  }, [statusFilter, paymentStatusFilter, sortField, sortDirection]);
+    // Only refetch when filters change and we're authenticated
+    if (!authLoading && !adminLoading && user && session && isAdmin) {
+      fetchOrders();
+    }
+  }, [statusFilter, paymentStatusFilter, sortField, sortDirection, authLoading, adminLoading, user, session, isAdmin]);
+
+  // Show loading while checking authentication
+  if (authLoading || adminLoading) {
+    return <div className="p-6">Loading...</div>;
+  }
+
+  // Redirect if not authenticated or not admin
+  if (!user || !session) {
+    return <Navigate to="/auth/signin" replace />;
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardContent className="p-12 text-center">
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <h3 className="text-lg font-medium mb-2">Access Denied</h3>
+            <p className="text-muted-foreground">
+              You need admin privileges to access order management.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (loading) {
     return <div className="p-6">Loading orders...</div>;
