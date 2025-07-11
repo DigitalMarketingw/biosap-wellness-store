@@ -350,14 +350,24 @@ export type Database = {
       }
       orders: {
         Row: {
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
           carrier: string | null
           created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
+          deletion_reason: string | null
           delivered_at: string | null
           estimated_delivery: string | null
           id: string
           payment_completed_at: string | null
           payment_method: string
           payment_status: string | null
+          refund_amount: number | null
+          refund_processed_at: string | null
+          refund_reference: string | null
+          refund_status: Database["public"]["Enums"]["refund_status"] | null
           shipped_at: string | null
           shipping_address: Json
           status: string
@@ -369,14 +379,24 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           carrier?: string | null
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          deletion_reason?: string | null
           delivered_at?: string | null
           estimated_delivery?: string | null
           id?: string
           payment_completed_at?: string | null
           payment_method?: string
           payment_status?: string | null
+          refund_amount?: number | null
+          refund_processed_at?: string | null
+          refund_reference?: string | null
+          refund_status?: Database["public"]["Enums"]["refund_status"] | null
           shipped_at?: string | null
           shipping_address: Json
           status?: string
@@ -388,14 +408,24 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           carrier?: string | null
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          deletion_reason?: string | null
           delivered_at?: string | null
           estimated_delivery?: string | null
           id?: string
           payment_completed_at?: string | null
           payment_method?: string
           payment_status?: string | null
+          refund_amount?: number | null
+          refund_processed_at?: string | null
+          refund_reference?: string | null
+          refund_status?: Database["public"]["Enums"]["refund_status"] | null
           shipped_at?: string | null
           shipping_address?: Json
           status?: string
@@ -410,6 +440,20 @@ export type Database = {
           {
             foreignKeyName: "fk_orders_user_id"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_cancelled_by_fkey"
+            columns: ["cancelled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_deleted_by_fkey"
+            columns: ["deleted_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -873,6 +917,15 @@ export type Database = {
         | "category_manager"
         | "order_manager"
         | "inventory_manager"
+      order_status_new:
+        | "pending"
+        | "confirmed"
+        | "processing"
+        | "shipped"
+        | "delivered"
+        | "cancelled"
+        | "deleted"
+      refund_status: "pending" | "processing" | "completed" | "failed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1007,6 +1060,16 @@ export const Constants = {
         "order_manager",
         "inventory_manager",
       ],
+      order_status_new: [
+        "pending",
+        "confirmed",
+        "processing",
+        "shipped",
+        "delivered",
+        "cancelled",
+        "deleted",
+      ],
+      refund_status: ["pending", "processing", "completed", "failed"],
     },
   },
 } as const

@@ -1,18 +1,17 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useAdmin } from '@/contexts/AdminContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { Search, Eye, Edit, Package, Truck, Download, Calendar, Filter, SortAsc, MoreHorizontal, User, AlertCircle } from 'lucide-react';
+import { Search, Eye, Edit, Package, Truck, Download, Calendar, Filter, SortAsc, MoreHorizontal, User, AlertCircle, Ban, Trash2, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Navigate } from 'react-router-dom';
@@ -33,6 +32,12 @@ interface Order {
   created_at: string;
   updated_at: string;
   shipping_address: any;
+  cancelled_at?: string;
+  cancellation_reason?: string;
+  deleted_at?: string;
+  refund_amount?: number;
+  refund_status?: 'pending' | 'processing' | 'completed' | 'failed';
+  refund_processed_at?: string;
   order_items?: Array<{
     id: string;
     quantity: number;
@@ -66,6 +71,16 @@ const OrderManagement = () => {
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Partial<Order>>({});
+  
+  // New state for cancel/delete/refund dialogs
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [refundDialogOpen, setRefundDialogOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [deleteReason, setDeleteReason] = useState('');
+  const [refundAmount, setRefundAmount] = useState('');
+  const [refundReason, setRefundReason] = useState('');
+  const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
     // Only fetch orders when we have confirmed authentication and admin status
@@ -108,6 +123,12 @@ const OrderManagement = () => {
           created_at,
           updated_at,
           shipping_address,
+          cancelled_at,
+          cancellation_reason,
+          deleted_at,
+          refund_amount,
+          refund_status,
+          refund_processed_at,
           order_items!inner(
             id,
             quantity,
@@ -231,6 +252,154 @@ const OrderManagement = () => {
     }
   };
 
+  const handleCancelOrder = async () => {
+    if (!selectedOrder) return;
+
+    setProcessing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('cancel-order', {
+        body: {
+          orderId: selectedOrder.id,
+          reason: cancelReason,
+          cancelledBy: user?.id
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Order cancelled successfully",
+      });
+
+      setCancelDialogOpen(false);
+      setCancelReason('');
+      setSelectedOrder(null);
+      await fetchOrders();
+    } catch (error: any) {
+      console.error('Error cancelling order:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to cancel order",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleDeleteOrder = async () => {
+    if (!selectedOrder) return;
+
+    setProcessing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('delete-order', {
+        body: {
+          orderId: selectedOrder.id,
+          reason: deleteReason
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Order deleted successfully",
+      });
+
+      setDeleteDialogOpen(false);
+      setDeleteReason('');
+      setSelectedOrder(null);
+      await fetchOrders();
+    } catch (error: any) {
+      console.error('Error deleting order:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete order",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleProcessRefund = async () => {
+    if (!selectedOrder) return;
+
+    setProcessing(true);
+    try {
+      const amount = parseFloat(refundAmount);
+      if (isNaN(amount) || amount <= 0) {
+        throw new Error("Please enter a valid refund amount");
+      }
+
+      if (amount > selectedOrder.total_amount) {
+        throw new Error("Refund amount cannot exceed order total");
+      }
+
+      const { data, error } = await supabase.functions.invoke('process-refund', {
+        body: {
+          orderId: selectedOrder.id,
+          amount: amount,
+          reason: refundReason
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Refund processed successfully",
+      });
+
+      setRefundDialogOpen(false);
+      setRefundAmount('');
+      setRefundReason('');
+      setSelectedOrder(null);
+      await fetchOrders();
+    } catch (error: any) {
+      console.error('Error processing refund:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to process refund",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const openCancelDialog = (order: Order) => {
+    setSelectedOrder(order);
+    setCancelDialogOpen(true);
+  };
+
+  const openDeleteDialog = (order: Order) => {
+    setSelectedOrder(order);
+    setDeleteDialogOpen(true);
+  };
+
+  const openRefundDialog = (order: Order) => {
+    setSelectedOrder(order);
+    setRefundAmount(order.total_amount.toString());
+    setRefundDialogOpen(true);
+  };
+
+  const canCancelOrder = (order: Order) => {
+    return !order.cancelled_at && !order.deleted_at && 
+           order.status !== 'shipped' && order.status !== 'delivered' && 
+           order.status !== 'cancelled';
+  };
+
+  const canDeleteOrder = (order: Order) => {
+    return !order.deleted_at;
+  };
+
+  const canRefundOrder = (order: Order) => {
+    return !order.deleted_at && order.payment_status === 'completed' && 
+           (!order.refund_amount || order.refund_amount < order.total_amount);
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
@@ -238,6 +407,7 @@ const OrderManagement = () => {
       case 'shipped': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
       case 'delivered': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
       case 'cancelled': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+      case 'deleted': return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
     }
   };
@@ -358,6 +528,7 @@ const OrderManagement = () => {
             <SelectItem value="shipped">Shipped</SelectItem>
             <SelectItem value="delivered">Delivered</SelectItem>
             <SelectItem value="cancelled">Cancelled</SelectItem>
+            <SelectItem value="deleted">Deleted</SelectItem>
           </SelectContent>
         </Select>
 
@@ -411,12 +582,22 @@ const OrderManagement = () => {
             </TableHeader>
             <TableBody>
               {filteredOrders.map((order) => (
-                <TableRow key={order.id}>
+                <TableRow key={order.id} className={order.deleted_at ? "opacity-50" : ""}>
                   <TableCell>
                     <div className="font-medium">#{order.id.slice(0, 8)}</div>
                     {order.tracking_number && (
                       <div className="text-sm text-muted-foreground">
                         Track: {order.tracking_number}
+                      </div>
+                    )}
+                    {order.cancelled_at && (
+                      <div className="text-xs text-red-500">
+                        Cancelled: {format(new Date(order.cancelled_at), 'MMM dd')}
+                      </div>
+                    )}
+                    {order.refund_amount && order.refund_amount > 0 && (
+                      <div className="text-xs text-blue-500">
+                        Refunded: ${order.refund_amount}
                       </div>
                     )}
                   </TableCell>
@@ -456,6 +637,13 @@ const OrderManagement = () => {
                     <Badge className={getStatusColor(order.status)}>
                       {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                     </Badge>
+                    {order.refund_status && order.refund_status !== 'pending' && (
+                      <div className="text-xs mt-1">
+                        <Badge variant="outline" className="text-xs">
+                          Refund: {order.refund_status}
+                        </Badge>
+                      </div>
+                    )}
                   </TableCell>
                   
                   <TableCell>
@@ -478,7 +666,7 @@ const OrderManagement = () => {
                         <Edit className="h-4 w-4" />
                       </Button>
                       
-                      {order.status === 'pending' && (
+                      {order.status === 'pending' && !order.deleted_at && (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -488,13 +676,46 @@ const OrderManagement = () => {
                         </Button>
                       )}
                       
-                      {order.status === 'processing' && (
+                      {order.status === 'processing' && !order.deleted_at && (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => updateOrderStatus(order.id, 'shipped')}
                         >
                           <Truck className="h-4 w-4" />
+                        </Button>
+                      )}
+
+                      {canCancelOrder(order) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openCancelDialog(order)}
+                          className="text-orange-600 hover:text-orange-700"
+                        >
+                          <Ban className="h-4 w-4" />
+                        </Button>
+                      )}
+
+                      {canRefundOrder(order) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openRefundDialog(order)}
+                          className="text-blue-600 hover:text-blue-700"
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                        </Button>
+                      )}
+
+                      {canDeleteOrder(order) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openDeleteDialog(order)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       )}
                     </div>
@@ -517,6 +738,141 @@ const OrderManagement = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Cancel Order Dialog */}
+      <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <AlertTriangle className="h-5 w-5 text-orange-500 mr-2" />
+              Cancel Order
+            </DialogTitle>
+            <DialogDescription>
+              This will cancel order #{selectedOrder?.id.slice(0, 8)} and process a refund if payment was completed.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="cancel-reason">Cancellation Reason</Label>
+              <Textarea
+                id="cancel-reason"
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="Enter reason for cancellation..."
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCancelOrder} 
+              disabled={processing}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              {processing ? "Cancelling..." : "Cancel Order"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Order Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <AlertTriangle className="h-5 w-5 text-red-500 mr-2" />
+              Delete Order
+            </DialogTitle>
+            <DialogDescription>
+              This will permanently delete order #{selectedOrder?.id.slice(0, 8)}. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="delete-reason">Deletion Reason</Label>
+              <Textarea
+                id="delete-reason"
+                value={deleteReason}
+                onChange={(e) => setDeleteReason(e.target.value)}
+                placeholder="Enter reason for deletion..."
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleDeleteOrder} 
+              disabled={processing}
+              variant="destructive"
+            >
+              {processing ? "Deleting..." : "Delete Order"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Process Refund Dialog */}
+      <Dialog open={refundDialogOpen} onOpenChange={setRefundDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <RefreshCw className="h-5 w-5 text-blue-500 mr-2" />
+              Process Refund
+            </DialogTitle>
+            <DialogDescription>
+              Process a refund for order #{selectedOrder?.id.slice(0, 8)} (Total: ${selectedOrder?.total_amount.toFixed(2)})
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="refund-amount">Refund Amount ($)</Label>
+              <Input
+                id="refund-amount"
+                type="number"
+                step="0.01"
+                value={refundAmount}
+                onChange={(e) => setRefundAmount(e.target.value)}
+                placeholder="Enter refund amount..."
+                max={selectedOrder?.total_amount}
+              />
+            </div>
+            <div>
+              <Label htmlFor="refund-reason">Refund Reason</Label>
+              <Textarea
+                id="refund-reason"
+                value={refundReason}
+                onChange={(e) => setRefundReason(e.target.value)}
+                placeholder="Enter reason for refund..."
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRefundDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleProcessRefund} 
+              disabled={processing}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {processing ? "Processing..." : "Process Refund"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Order Detail Dialog */}
       <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
@@ -571,6 +927,30 @@ const OrderManagement = () => {
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Delivered:</span>
                         <span>{format(new Date(selectedOrder.delivered_at), 'MMM dd, yyyy HH:mm')}</span>
+                      </div>
+                    )}
+                    {selectedOrder.cancelled_at && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Cancelled:</span>
+                        <span>{format(new Date(selectedOrder.cancelled_at), 'MMM dd, yyyy HH:mm')}</span>
+                      </div>
+                    )}
+                    {selectedOrder.cancellation_reason && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Cancel Reason:</span>
+                        <span className="text-sm">{selectedOrder.cancellation_reason}</span>
+                      </div>
+                    )}
+                    {selectedOrder.refund_amount && selectedOrder.refund_amount > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Refund Amount:</span>
+                        <span className="font-medium text-blue-600">${Number(selectedOrder.refund_amount).toFixed(2)}</span>
+                      </div>
+                    )}
+                    {selectedOrder.refund_processed_at && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Refund Processed:</span>
+                        <span>{format(new Date(selectedOrder.refund_processed_at), 'MMM dd, yyyy HH:mm')}</span>
                       </div>
                     )}
                   </CardContent>
