@@ -93,18 +93,32 @@ const OrderManagement = () => {
       let query = supabase
         .from('orders')
         .select(`
-          *,
-          order_items(
+          id,
+          user_id,
+          total_amount,
+          status,
+          payment_method,
+          payment_status,
+          tracking_number,
+          tracking_url,
+          carrier,
+          estimated_delivery,
+          shipped_at,
+          delivered_at,
+          created_at,
+          updated_at,
+          shipping_address,
+          order_items!inner(
             id,
             quantity,
             price,
-            products(
+            products!inner(
               id,
               name,
               image_urls
             )
           ),
-          profiles(
+          profiles!fk_orders_user_id(
             first_name,
             last_name,
             email,
