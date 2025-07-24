@@ -71,10 +71,12 @@ const Settings = () => {
         .from('system_settings')
         .upsert({
           key,
-          value,
+          value: JSON.stringify(value),
           description: description || '',
           category: category || 'general',
           updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'key'
         });
 
       if (error) throw error;
