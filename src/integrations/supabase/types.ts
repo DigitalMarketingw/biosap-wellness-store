@@ -738,6 +738,33 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limits: {
+        Row: {
+          action: string
+          count: number | null
+          created_at: string | null
+          id: string
+          identifier: string
+          window_start: string | null
+        }
+        Insert: {
+          action: string
+          count?: number | null
+          created_at?: string | null
+          id?: string
+          identifier: string
+          window_start?: string | null
+        }
+        Update: {
+          action?: string
+          count?: number | null
+          created_at?: string | null
+          id?: string
+          identifier?: string
+          window_start?: string | null
+        }
+        Relationships: []
+      }
       subcategories: {
         Row: {
           category_id: string | null
@@ -903,6 +930,10 @@ export type Database = {
       }
       is_admin_user: {
         Args: { user_id?: string }
+        Returns: boolean
+      }
+      is_valid_email: {
+        Args: { email_input: string }
         Returns: boolean
       }
       same_company: {
