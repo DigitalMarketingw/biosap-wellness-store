@@ -82,7 +82,7 @@ const HeroCarousel = () => {
             <img 
               src="/lovable-uploads/1aa37669-de0f-422b-81df-fabede344482.png" 
               alt="BIOSAP CoolDetox - Natural Detox Solution"
-              className="relative z-10 w-full h-auto rounded-2xl shadow-2xl"
+              className="relative z-10 w-full h-64 lg:h-80 object-contain rounded-2xl shadow-2xl"
             />
           </div>
         </div>
@@ -142,7 +142,7 @@ const HeroCarousel = () => {
             <img 
               src="/lovable-uploads/df78a984-412e-4645-b1d7-1ed1b8aacd7b.png" 
               alt="FEMVIT BRU - Women's Wellness Support"
-              className="relative z-10 w-full h-auto rounded-2xl shadow-2xl"
+              className="relative z-10 w-full h-64 lg:h-80 object-contain rounded-2xl shadow-2xl"
             />
           </div>
         </div>
@@ -202,7 +202,7 @@ const HeroCarousel = () => {
             <img 
               src="/lovable-uploads/1b0830d9-a2f7-49d9-9dbf-f738f13913fc.png" 
               alt="SmokyGinger - Digestive Health Tea"
-              className="relative z-10 w-full h-auto rounded-2xl shadow-2xl"
+              className="relative z-10 w-full h-64 lg:h-80 object-contain rounded-2xl shadow-2xl"
             />
           </div>
         </div>
@@ -262,7 +262,7 @@ const HeroCarousel = () => {
             <img 
               src="/lovable-uploads/1aa37669-de0f-422b-81df-fabede344482.png" 
               alt="CoolDetox - Natural Cleansing Solution"
-              className="relative z-10 w-full h-auto rounded-2xl shadow-2xl"
+              className="relative z-10 w-full h-64 lg:h-80 object-contain rounded-2xl shadow-2xl"
             />
           </div>
         </div>
@@ -283,9 +283,9 @@ const HeroCarousel = () => {
         <CarouselContent className="-ml-0">
           {slides.map((slide, index) => (
             <CarouselItem key={slide.id} className="pl-0">
-              <div className={`relative overflow-hidden min-h-[500px] lg:min-h-[600px] ${slide.background}`}>
+              <div className={`relative overflow-hidden h-[500px] lg:h-[600px] ${slide.background}`}>
                 <div className="absolute inset-0 bg-black/20"></div>
-                <div className="relative container mx-auto px-4 h-full flex items-center py-20 lg:py-32">
+                <div className="relative container mx-auto px-4 h-full flex items-center">
                   {slide.content}
                 </div>
               </div>
