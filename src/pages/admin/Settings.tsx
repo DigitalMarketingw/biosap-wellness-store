@@ -67,11 +67,13 @@ const Settings = () => {
 
   const updateSetting = async (key: string, value: any, description?: string, category?: string) => {
     try {
+      console.log(`Updating setting ${key} with value:`, value);
+      
       const { error } = await supabase
         .from('system_settings')
         .upsert({
           key,
-          value: JSON.stringify(value),
+          value: value, // Don't JSON.stringify - jsonb column handles this automatically
           description: description || '',
           category: category || 'general',
           updated_at: new Date().toISOString()
@@ -79,10 +81,20 @@ const Settings = () => {
           onConflict: 'key'
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error(`Error updating setting ${key}:`, error);
+        throw error;
+      }
 
+      console.log(`Successfully updated setting ${key}`);
       setSettings(prev => ({ ...prev, [key]: value }));
-      await logAdminActivity('update', 'system_settings', undefined, { key, value });
+      
+      // Try to log admin activity, but don't fail the save if this fails
+      try {
+        await logAdminActivity('update', 'system_settings', undefined, { key, value });
+      } catch (logError) {
+        console.warn('Failed to log admin activity:', logError);
+      }
     } catch (error) {
       console.error('Error updating setting:', error);
       throw error;
