@@ -283,9 +283,9 @@ const HeroCarousel = () => {
         <CarouselContent className="-ml-0">
           {slides.map((slide, index) => (
             <CarouselItem key={slide.id} className="pl-0">
-              <div className={`relative overflow-hidden ${slide.background}`}>
+              <div className={`relative overflow-hidden min-h-[500px] lg:min-h-[600px] ${slide.background}`}>
                 <div className="absolute inset-0 bg-black/20"></div>
-                <div className="relative container mx-auto px-4 py-20 lg:py-32">
+                <div className="relative container mx-auto px-4 h-full flex items-center py-20 lg:py-32">
                   {slide.content}
                 </div>
               </div>
