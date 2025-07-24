@@ -8,6 +8,7 @@ import CategoryCard from '@/components/CategoryCard';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
+import HeroCarousel from '@/components/HeroCarousel';
 
 const Home = () => {
   const { data: featuredProducts } = useQuery({
@@ -40,67 +41,8 @@ const Home = () => {
 
   return (
     <div className="bg-gradient-to-b from-green-50 to-white">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-r from-green-600 via-green-500 to-emerald-500">
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="relative container mx-auto px-4 py-20 lg:py-32">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="text-white space-y-6">
-              <div className="inline-flex items-center space-x-2 bg-white/20 rounded-full px-4 py-2">
-                <Leaf className="h-5 w-5" />
-                <span className="text-sm font-medium">Pure Ayurvedic Wellness</span>
-              </div>
-              
-              <h1 className="text-4xl lg:text-6xl font-bold leading-tight">
-                Natural Healing
-                <span className="block text-yellow-300">for Modern Life</span>
-              </h1>
-              
-              <p className="text-xl text-green-50 max-w-lg">
-                Discover premium Ayurvedic products crafted with ancient wisdom and modern science. 
-                Your journey to holistic wellness starts here.
-              </p>
-              
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link to="/products">
-                  <Button size="lg" className="bg-white text-green-600 hover:bg-green-50 px-8">
-                    Shop Now
-                  </Button>
-                </Link>
-                <Link to="/about">
-                  <Button size="lg" className="border-white text-white hover:bg-white hover:text-green-600 px-8">
-                    Learn More
-                  </Button>
-                </Link>
-              </div>
-              
-              <div className="flex items-center space-x-6 pt-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold">10K+</div>
-                  <div className="text-sm text-green-100">Happy Customers</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold">100%</div>
-                  <div className="text-sm text-green-100">Natural Products</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold">5★</div>
-                  <div className="text-sm text-green-100">Average Rating</div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="relative">
-              <div className="aspect-square bg-white/10 rounded-full blur-3xl absolute inset-0 transform scale-150"></div>
-              <img 
-                src="/lovable-uploads/1aa37669-de0f-422b-81df-fabede344482.png" 
-                alt="BIOSAP CoolDetox - Coriander Mint Ginger Instant Herbal Infusion for Natural Detox and Cleansing"
-                className="relative z-10 w-full h-auto rounded-2xl shadow-2xl"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Hero Carousel */}
+      <HeroCarousel />
 
       {/* Categories Section */}
       <section className="py-16 bg-white">
