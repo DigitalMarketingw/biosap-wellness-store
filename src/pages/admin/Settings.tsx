@@ -41,7 +41,13 @@ const Settings = () => {
       if (error) throw error;
 
       const settingsMap = data?.reduce((acc, setting) => {
-        acc[setting.key] = setting.value;
+        // Parse JSON values properly
+        try {
+          acc[setting.key] = typeof setting.value === 'string' ? JSON.parse(setting.value) : setting.value;
+        } catch {
+          // If JSON parsing fails, use the raw value
+          acc[setting.key] = setting.value;
+        }
         return acc;
       }, {} as Record<string, any>) || {};
 
