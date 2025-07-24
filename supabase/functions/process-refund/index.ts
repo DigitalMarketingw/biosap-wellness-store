@@ -6,6 +6,35 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Input validation functions
+const validateOrderId = (orderId: any): string => {
+  if (!orderId || typeof orderId !== 'string') {
+    throw new Error("Invalid order ID");
+  }
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(orderId)) {
+    throw new Error("Invalid order ID format");
+  }
+  return orderId;
+};
+
+const validateAmount = (amount: any): number => {
+  if (!amount || typeof amount !== 'number' || amount <= 0) {
+    throw new Error("Invalid refund amount");
+  }
+  if (amount > 1000000) { // Max refund of ₹10,00,000
+    throw new Error("Refund amount too large");
+  }
+  return amount;
+};
+
+const validateReason = (reason: any): string => {
+  if (reason && typeof reason === 'string' && reason.length > 500) {
+    throw new Error("Reason too long");
+  }
+  return reason || "Refund requested";
+};
+
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[PROCESS-REFUND] ${step}${detailsStr}`);
@@ -34,9 +63,10 @@ serve(async (req) => {
     const user = userData.user;
     if (!user) throw new Error("User not authenticated");
 
-    const { orderId, amount, reason } = await req.json();
-    if (!orderId) throw new Error("Order ID is required");
-    if (!amount) throw new Error("Refund amount is required");
+    const requestBody = await req.json();
+    const orderId = validateOrderId(requestBody.orderId);
+    const amount = validateAmount(requestBody.amount);
+    const reason = validateReason(requestBody.reason);
 
     logStep("Processing refund", { orderId, amount, reason });
 

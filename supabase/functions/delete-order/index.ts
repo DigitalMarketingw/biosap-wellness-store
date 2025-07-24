@@ -6,6 +6,25 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Input validation functions
+const validateOrderId = (orderId: any): string => {
+  if (!orderId || typeof orderId !== 'string') {
+    throw new Error("Invalid order ID");
+  }
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(orderId)) {
+    throw new Error("Invalid order ID format");
+  }
+  return orderId;
+};
+
+const validateReason = (reason: any): string => {
+  if (reason && typeof reason === 'string' && reason.length > 500) {
+    throw new Error("Reason too long");
+  }
+  return reason || "Administrative deletion";
+};
+
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[DELETE-ORDER] ${step}${detailsStr}`);
@@ -46,8 +65,9 @@ serve(async (req) => {
       throw new Error("Only administrators can delete orders");
     }
 
-    const { orderId, reason } = await req.json();
-    if (!orderId) throw new Error("Order ID is required");
+    const requestBody = await req.json();
+    const orderId = validateOrderId(requestBody.orderId);
+    const reason = validateReason(requestBody.reason);
 
     logStep("Deleting order", { orderId, reason });
 

@@ -6,6 +6,37 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Input validation schema
+const validateOrderId = (orderId: any): string => {
+  if (!orderId || typeof orderId !== 'string') {
+    throw new Error("Invalid order ID");
+  }
+  // Basic UUID validation
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(orderId)) {
+    throw new Error("Invalid order ID format");
+  }
+  return orderId;
+};
+
+const validateReason = (reason: any): string => {
+  if (reason && typeof reason === 'string' && reason.length > 500) {
+    throw new Error("Reason too long");
+  }
+  return reason || "Order cancelled";
+};
+
+const validateUserId = (userId: any): string => {
+  if (!userId || typeof userId !== 'string') {
+    throw new Error("Invalid user ID");
+  }
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(userId)) {
+    throw new Error("Invalid user ID format");
+  }
+  return userId;
+};
+
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[CANCEL-ORDER] ${step}${detailsStr}`);
@@ -34,8 +65,10 @@ serve(async (req) => {
     const user = userData.user;
     if (!user) throw new Error("User not authenticated");
 
-    const { orderId, reason, cancelledBy } = await req.json();
-    if (!orderId) throw new Error("Order ID is required");
+    const requestBody = await req.json();
+    const orderId = validateOrderId(requestBody.orderId);
+    const reason = validateReason(requestBody.reason);
+    const cancelledBy = requestBody.cancelledBy ? validateUserId(requestBody.cancelledBy) : user.id;
 
     logStep("Cancelling order", { orderId, reason, cancelledBy });
 
