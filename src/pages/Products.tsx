@@ -130,7 +130,7 @@ const Products = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
       {/* Hero Banner with Product Showcase */}
-      <section className="relative bg-gradient-to-r from-green-600 to-green-800 text-white py-16">
+      {/* <section className="relative bg-gradient-to-r from-green-600 to-green-800 text-white py-16">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h1 className="text-4xl lg:text-5xl font-bold mb-4">Our Products</h1>
@@ -174,7 +174,7 @@ const Products = () => {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
 
       <div className="container mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-4 gap-8">
