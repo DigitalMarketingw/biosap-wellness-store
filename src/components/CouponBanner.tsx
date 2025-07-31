@@ -23,7 +23,7 @@ const CouponBanner = () => {
       <div className="container mx-auto flex items-center justify-center relative">
         <div className="text-center">
           <span className="text-sm md:text-base font-semibold animate-pulse">
-            🎉 LIMITED TIME OFFER: Get 10% OFF on your first order! Use code: WELCOME10 🎉
+            🎉 LIMITED TIME OFFER: Get 10% OFF on your first order! Use code: GLOWPASS10 🎉
           </span>
         </div>
         <button
