@@ -19,8 +19,12 @@ interface CartItem {
 
 interface OrderSummaryProps {
   items: CartItem[];
+  subtotal: number;
+  discountAmount: number;
+  deliveryFee: number;
   totalPrice: number;
   paymentMethod: string;
+  appliedCoupon?: any;
   isProcessing: boolean;
   isRazorpayProcessing: boolean;
   onSubmit: () => void;
@@ -28,8 +32,12 @@ interface OrderSummaryProps {
 
 const OrderSummary: React.FC<OrderSummaryProps> = ({
   items,
+  subtotal,
+  discountAmount,
+  deliveryFee,
   totalPrice,
   paymentMethod,
+  appliedCoupon,
   isProcessing,
   isRazorpayProcessing,
   onSubmit
@@ -51,12 +59,21 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
         
         <div className="flex justify-between">
           <span>Subtotal</span>
-          <span>₹{totalPrice.toFixed(2)}</span>
+          <span>₹{subtotal.toFixed(2)}</span>
         </div>
         
+        {appliedCoupon && discountAmount > 0 && (
+          <div className="flex justify-between text-green-700">
+            <span>Coupon ({appliedCoupon.code})</span>
+            <span>-₹{discountAmount.toFixed(2)}</span>
+          </div>
+        )}
+        
         <div className="flex justify-between">
-          <span>Shipping</span>
-          <span className="text-green-600">Free</span>
+          <span>Delivery</span>
+          <span className={deliveryFee === 0 ? "text-green-600" : "text-orange-600"}>
+            {deliveryFee === 0 ? 'Free' : `₹${deliveryFee.toFixed(2)}`}
+          </span>
         </div>
         
         <Separator />

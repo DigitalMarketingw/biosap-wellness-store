@@ -8,6 +8,9 @@ import { useRazorpayPayment } from '@/hooks/useRazorpayPayment';
 import ShippingForm from '@/components/checkout/ShippingForm';
 import PaymentMethodSelector from '@/components/checkout/PaymentMethodSelector';
 import OrderSummary from '@/components/checkout/OrderSummary';
+import CouponApply from '@/components/checkout/CouponApply';
+import DeliveryConditions from '@/components/checkout/DeliveryConditions';
+import { useCoupon } from '@/hooks/useCoupon';
 
 const Checkout = () => {
   const { items, getTotalPrice, clearCart } = useCart();
@@ -15,6 +18,7 @@ const Checkout = () => {
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
   const { initiatePayment, isProcessing: isRazorpayProcessing } = useRazorpayPayment();
+  const { appliedCoupon, isLoading: isCouponLoading, applyCoupon, removeCoupon, calculateDiscount } = useCoupon();
   
   const [shippingInfo, setShippingInfo] = useState({
     firstName: '',
@@ -29,6 +33,12 @@ const Checkout = () => {
 
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
+
+  // Calculate pricing
+  const subtotal = getTotalPrice();
+  const discountAmount = calculateDiscount(subtotal);
+  const deliveryFee = (subtotal < 500 || paymentMethod === 'cod') ? 50 : 0;
+  const finalTotal = subtotal - discountAmount + deliveryFee;
 
   const handleInputChange = (field: string, value: string) => {
     setShippingInfo(prev => ({ ...prev, [field]: value }));
@@ -78,16 +88,27 @@ const Checkout = () => {
     };
 
     // Create order
+    // Create order with pricing breakdown in shipping_address
+    const orderData = {
+      user_id: user.id,
+      total_amount: finalTotal,
+      status: 'pending',
+      shipping_address: {
+        ...cleanShippingInfo,
+        // Store pricing breakdown as strings for JSON compatibility
+        applied_coupon_code: appliedCoupon?.code || null,
+        applied_coupon_name: appliedCoupon?.name || null,
+        discount_amount: discountAmount.toString(),
+        delivery_fee: deliveryFee.toString(),
+        subtotal: subtotal.toString()
+      },
+      payment_method: paymentMethod,
+      payment_status: 'pending'
+    };
+
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .insert({
-        user_id: user.id,
-        total_amount: getTotalPrice(),
-        status: 'pending',
-        shipping_address: cleanShippingInfo,
-        payment_method: paymentMethod,
-        payment_status: 'pending'
-      })
+      .insert(orderData)
       .select()
       .single();
 
@@ -199,13 +220,29 @@ const Checkout = () => {
             paymentMethod={paymentMethod}
             onPaymentMethodChange={setPaymentMethod}
           />
+
+          <CouponApply
+            appliedCoupon={appliedCoupon}
+            onApplyCoupon={applyCoupon}
+            onRemoveCoupon={removeCoupon}
+            isLoading={isCouponLoading}
+          />
+
+          <DeliveryConditions
+            subtotal={subtotal}
+            paymentMethod={paymentMethod}
+          />
         </div>
 
         <div>
           <OrderSummary
             items={items}
-            totalPrice={getTotalPrice()}
+            subtotal={subtotal}
+            discountAmount={discountAmount}
+            deliveryFee={deliveryFee}
+            totalPrice={finalTotal}
             paymentMethod={paymentMethod}
+            appliedCoupon={appliedCoupon}
             isProcessing={isProcessing}
             isRazorpayProcessing={isRazorpayProcessing}
             onSubmit={handlePlaceOrder}
