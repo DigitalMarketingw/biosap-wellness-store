@@ -22,7 +22,7 @@ const HeroCarousel = () => {
           <img 
             src="/lovable-uploads/3b2ff640-d203-4685-828e-444598cbd3d9.png"
             alt="CoolDetox - Natural Healing for Modern Life"
-            className="w-full h-full object-cover transition-brightness duration-300 group-hover:brightness-110"
+            className="w-full h-full object-contain transition-brightness duration-300 group-hover:brightness-110"
           />
         </button>
       )
@@ -36,9 +36,9 @@ const HeroCarousel = () => {
           aria-label="View all products - BioSAP MindMuse"
         >
           <img 
-            src="/lovable-uploads/e5118814-d7f8-4f5d-93ba-58cb3058fd5f.png"
+            src="/lovable-uploads/1ee52376-40c5-46ea-b044-6cff687f2d18.png"
             alt="BioSAP MindMuse - Ayurvedic Brain Health Supplement"
-            className="w-full h-full object-cover transition-brightness duration-300 group-hover:brightness-110"
+            className="w-full h-full object-contain transition-brightness duration-300 group-hover:brightness-110"
           />
         </button>
       )
