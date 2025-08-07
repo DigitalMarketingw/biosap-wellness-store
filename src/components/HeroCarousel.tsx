@@ -20,7 +20,7 @@ const HeroCarousel = () => {
           aria-label="View all products - CoolDetox Natural Healing"
         >
           <img 
-            src="/lovable-uploads/5ff5f3cf-8e98-47dc-b7ca-16e90620209a.png"
+            src="/lovable-uploads/642920e8-52f4-4883-8c35-be9ad3a60fb1.png"
             alt="CoolDetox - Natural Healing for Modern Life"
             className="w-full h-full object-cover transition-brightness duration-300 group-hover:brightness-110"
           />
@@ -36,7 +36,7 @@ const HeroCarousel = () => {
           aria-label="View all products - BioSAP MindMuse"
         >
           <img 
-            src="/lovable-uploads/8ad39fcc-2516-4e14-b258-1e853488bf77.png"
+            src="/lovable-uploads/fbe55fbd-11cc-4d49-9778-a77bf3da550d.png"
             alt="BioSAP MindMuse - Ayurvedic Brain Health Supplement"
             className="w-full h-full object-cover transition-brightness duration-300 group-hover:brightness-110"
           />
@@ -62,7 +62,7 @@ const HeroCarousel = () => {
         <CarouselContent className="-ml-0">
           {slides.map((slide) => (
             <CarouselItem key={slide.id} className="pl-0">
-              <div className="relative overflow-hidden h-[400px] sm:h-[500px] lg:h-[600px] xl:h-[700px]">
+              <div className="relative overflow-hidden h-[300px] sm:h-[400px] md:h-[450px] lg:h-[500px] xl:h-[600px] aspect-video">
                 {slide.content}
               </div>
             </CarouselItem>
