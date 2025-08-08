@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AspectRatio } from './ui/aspect-ratio';
 
 const HeroCarousel = () => {
   const navigate = useNavigate();
@@ -9,21 +10,22 @@ const HeroCarousel = () => {
   };
 
   return (
-    <section className="relative overflow-hidden mt-2" aria-label="Hero banner">
-      <div className="relative overflow-hidden h-[220px] sm:h-[300px] md:h-[400px] lg:h-[500px] xl:h-[700px]">
+    <section className="relative mt-2" aria-label="Hero banner">
+      <AspectRatio ratio={16 / 7}>
         <button
           onClick={handleBannerClick}
-          className="w-full h-full flex items-center justify-center cursor-pointer group transition-transform duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          className="w-full h-full flex items-center justify-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
           aria-label="View all products - CoolDetox Natural Healing"
         >
           <img
             src="/lovable-uploads/b455fd03-ad68-4e39-bfae-01c255a5c997.png"
             alt="CoolDetox banner promoting natural healing for modern life"
-            className="w-full h-full object-cover transition-[filter,transform] duration-300 group-hover:brightness-110"
+            className="w-full h-full object-contain"
             loading="eager"
+            decoding="async"
           />
         </button>
-      </div>
+      </AspectRatio>
     </section>
   );
 };
