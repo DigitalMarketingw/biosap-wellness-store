@@ -109,13 +109,24 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Mobile menu button */}
-          <div className="md:hidden">
+          {/* Mobile actions */}
+          <div className="md:hidden flex items-center gap-2">
+            {user && (
+              <Link to="/profile" aria-label="Go to profile">
+                <Button variant="ghost" size="sm" className="p-2">
+                  <User className="h-5 w-5" />
+                </Button>
+              </Link>
+            )}
             <Button
+              id="mobile-menu-toggle"
               variant="ghost"
               size="sm"
               onClick={() => setIsOpen(!isOpen)}
               className="p-2"
+              aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-controls="mobile-menu"
+              aria-expanded={isOpen}
             >
               {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
@@ -124,7 +135,7 @@ const Navbar = () => {
 
         {/* Mobile Navigation */}
         {isOpen && (
-          <div className="md:hidden py-4 border-t border-green-100">
+          <div id="mobile-menu" role="region" aria-labelledby="mobile-menu-toggle" className="md:hidden py-4 border-t border-green-100">
             <div className="flex flex-col space-y-3">
               {navigation.map((item) => (
                 <Link
