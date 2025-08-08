@@ -2,6 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ShoppingCart, Plus, Minus } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ProductCartActionsProps {
   product: {
@@ -25,6 +26,7 @@ const ProductCartActions: React.FC<ProductCartActionsProps> = ({
   onGoToCart,
   onQuantityUpdate
 }) => {
+  const isMobile = useIsMobile();
   return (
     <div className="flex items-center justify-between pt-2">
       <div className="text-2xl font-bold text-green-800">
@@ -60,22 +62,24 @@ const ProductCartActions: React.FC<ProductCartActionsProps> = ({
         
         {isInCart ? (
           <Button 
-            size="sm" 
+            size={isMobile ? "icon" : "sm"}
             className="bg-green-600 hover:bg-green-700 text-white"
             onClick={onGoToCart}
+            aria-label={isMobile ? "Go to Cart" : undefined}
           >
-            <ShoppingCart className="h-4 w-4 mr-1" />
-            Go to Cart
+            <ShoppingCart className="h-4 w-4" />
+            {!isMobile && <span className="ml-1">Go to Cart</span>}
           </Button>
         ) : (
           <Button 
-            size="sm" 
+            size={isMobile ? "icon" : "sm"}
             className="bg-green-600 hover:bg-green-700 text-white"
             onClick={onAddToCart}
             disabled={product.stock !== undefined && product.stock === 0}
+            aria-label={isMobile ? "Add to Cart" : undefined}
           >
-            <ShoppingCart className="h-4 w-4 mr-1" />
-            Add to Cart
+            <ShoppingCart className="h-4 w-4" />
+            {!isMobile && <span className="ml-1">Add to Cart</span>}
           </Button>
         )}
       </div>
