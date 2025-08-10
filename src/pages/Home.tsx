@@ -9,6 +9,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import HeroCarousel from '@/components/HeroCarousel';
+import ProductBanner from '@/components/ProductBanner';
 
 const Home = () => {
   const { data: featuredProducts } = useQuery({
@@ -71,6 +72,11 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      {/* MindMuse Banner */}
+      <div className="container mx-auto px-4">
+        <ProductBanner />
+      </div>
 
       {/* Product Showcase Section */}
       <section className="py-16 bg-white">
