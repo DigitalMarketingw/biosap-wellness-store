@@ -74,9 +74,7 @@ const Home = () => {
       </section>
 
       {/* MindMuse Banner */}
-      <div className="container mx-auto px-4">
-        <ProductBanner />
-      </div>
+      <ProductBanner />
 
       {/* Product Showcase Section */}
       <section className="py-16 bg-white">
