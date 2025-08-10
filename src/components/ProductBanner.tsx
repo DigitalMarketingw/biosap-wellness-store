@@ -18,7 +18,7 @@ const ProductBanner = () => {
           aria-label="Explore MindMuse products - Shop now"
         >
           <img
-            src="/lovable-uploads/5279cbc0-962b-4b9a-8781-4fcc6e572940.png"
+            src="/lovable-uploads/2c035a92-f311-42fd-aa85-e020a24faedf.png"
             alt="MindMuse promotional banner - Explore our premium product collection"
             className="w-full h-full object-contain"
             loading="lazy"
