@@ -287,7 +287,7 @@ const ThankYou = () => {
                     <Phone className="w-5 h-5 text-green-600" />
                     <div>
                       <p className="font-medium">Call Us</p>
-                      <p className="text-sm text-gray-600">+91 9876543210</p>
+                      <p className="text-sm text-gray-600">+91 9599519312</p>
                     </div>
                   </div>
                   
@@ -295,7 +295,7 @@ const ThankYou = () => {
                     <Mail className="w-5 h-5 text-green-600" />
                     <div>
                       <p className="font-medium">Email Support</p>
-                      <p className="text-sm text-gray-600">support@biosap.com</p>
+                      <p className="text-sm text-gray-600">plantsmedg@gmail.com</p>
                     </div>
                   </div>
                 </div>
