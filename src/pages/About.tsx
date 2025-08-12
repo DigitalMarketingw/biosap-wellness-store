@@ -32,18 +32,13 @@ const About = () => {
 
   const team = [
     {
-      name: "Dr. Rajesh Sharma",
-      role: "Chief Ayurvedic Consultant",
+      name: "Dr. Mahesh Sharma",
+      role: "Founder & Chief Ayurvedic Practitioner",
       experience: "25+ years in Ayurveda"
     },
     {
-      name: "Dr. Priya Verma",
-      role: "Head of Quality Control",
-      experience: "15+ years in herbal research"
-    },
-    {
-      name: "Arjun Patel",
-      role: "Founder & CEO",
+      name: "Dr. Rakesh Gautam",
+      role: "Co-Founder",
       experience: "10+ years in wellness industry"
     }
   ];
